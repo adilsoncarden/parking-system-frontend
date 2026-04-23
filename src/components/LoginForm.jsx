@@ -32,6 +32,16 @@ const LoginForm = () => {
                     />
                 </div>
             </div>
+
+            {/* Selector de Rol */}
+            <div className="mb-3">
+                <label className="form-label">Rol de Usuario</label>
+                <select className="form-select">
+                    <option value="">Seleccione un rol</option>
+                    <option value="admin">Administrador</option>
+                    <option value="porteria">Portería</option>
+                </select>
+            </div>
         </form>
     );
 };
