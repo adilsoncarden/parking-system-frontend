@@ -1,10 +1,13 @@
+import LoginForm from "./components/LoginForm";
+
 function App() {
     return (
-        <div className="container mt-5">
-            <div className="alert alert-success" role="alert">
-                ¡Bootstrap 5 configurado correctamente en Vite!
+        <div className="container p-5">
+            <div className="row justify-content-center">
+                <div className="col-md-4">
+                    <LoginForm />
+                </div>
             </div>
-            <button className="btn btn-primary">Botón de prueba</button>
         </div>
     );
 }
