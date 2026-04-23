@@ -1,6 +1,10 @@
 import React from "react";
 
 const LoginForm = () => {
+    const [email, setEmail] = React.useState('');
+    const [password, setPassword] = React.useState('');
+    const [rol, setRol] = React.useState('');
+    const [error, setError] = React.useState('');
     return (
         <form>
             {/* Input de Correo */}
@@ -14,6 +18,8 @@ const LoginForm = () => {
                         type="email"
                         className="form-control"
                         placeholder="ejemplo@correo.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                     />
                 </div>
             </div>
@@ -29,6 +35,8 @@ const LoginForm = () => {
                         type="password"
                         className="form-control"
                         placeholder="********"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                     />
                 </div>
             </div>
@@ -36,7 +44,11 @@ const LoginForm = () => {
             {/* Selector de Rol */}
             <div className="mb-3">
                 <label className="form-label">Rol de Usuario</label>
-                <select className="form-select">
+                <select
+                    className="form-select"
+                    value={rol}
+                    onChange={(e) => setRol(e.target.value)}
+                >
                     <option value="">Seleccione un rol</option>
                     <option value="admin">Administrador</option>
                     <option value="porteria">Portería</option>
