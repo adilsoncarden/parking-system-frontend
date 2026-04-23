@@ -1,6 +1,6 @@
 import React from "react";
 
-const LoginForm = () => {
+const LoginForm = ({ onLogin }) => {
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [rol, setRol] = React.useState('');
@@ -28,8 +28,9 @@ const LoginForm = () => {
             return;
         }
 
-        alert(`Bienvenido, ${rol === 'admin' ? 'Administrador' : 'Portero'}`);
+        onLogin(usuario.rol);
     };
+    const [showPassword, setShowPassword] = React.useState(false);
     return (
         <form onSubmit={handleSubmit}>
             {/* Input de Correo */}
@@ -50,20 +51,24 @@ const LoginForm = () => {
             </div>
 
             {/* Input de Contraseña */}
-            <div className="mb-3">
-                <label className="form-label">Contraseña</label>
-                <div className="input-group">
-                    <span className="input-group-text">
-                        <i className="bi bi-lock"></i>
-                    </span>
-                    <input
-                        type="password"
-                        className="form-control"
-                        placeholder="********"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                </div>
+            <div className="input-group">
+                <span className="input-group-text">
+                    <i className="bi bi-lock"></i>
+                </span>
+                <input
+                    type={showPassword ? 'text' : 'password'}
+                    className="form-control"
+                    placeholder="********"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                    type="button"
+                    className="input-group-text bg-white"
+                    onClick={() => setShowPassword(!showPassword)}
+                >
+                    <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                </button>
             </div>
 
             {/* Selector de Rol */}
