@@ -5,8 +5,33 @@ const LoginForm = () => {
     const [password, setPassword] = React.useState('');
     const [rol, setRol] = React.useState('');
     const [error, setError] = React.useState('');
+    const usuarios = [
+        { email: 'admin@condominio.com', password: 'admin123', rol: 'admin' },
+        { email: 'portero@condominio.com', password: 'portero123', rol: 'porteria' }
+    ];
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        setError('');
+
+        if (!email || !password || !rol) {
+            setError('Por favor complete todos los campos.');
+            return;
+        }
+
+        const usuario = usuarios.find(
+            (u) => u.email === email && u.password === password && u.rol === rol
+        );
+
+        if (!usuario) {
+            setError('Credenciales incorrectas. Verifique sus datos.');
+            return;
+        }
+
+        alert(`Bienvenido, ${rol === 'admin' ? 'Administrador' : 'Portero'}`);
+    };
     return (
-        <form>
+        <form onSubmit={handleSubmit}>
             {/* Input de Correo */}
             <div className="mb-3">
                 <label className="form-label">Correo Electrónico</label>
@@ -54,6 +79,13 @@ const LoginForm = () => {
                     <option value="porteria">Portería</option>
                 </select>
             </div>
+
+            {/* Mensaje de error */}
+            {error && (
+                <div className="alert alert-danger py-2 small mb-3">
+                    {error}
+                </div>
+            )}
 
             {/* Botón de Ingreso */}
             <div className="d-grid gap-2 mb-3">
