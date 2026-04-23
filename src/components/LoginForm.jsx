@@ -42,6 +42,23 @@ const LoginForm = () => {
                     <option value="porteria">Portería</option>
                 </select>
             </div>
+
+            {/* Botón de Ingreso */}
+            <div className="d-grid gap-2 mb-3">
+                <button type="submit" className="btn btn-primary">
+                    Ingresar al Sistema
+                </button>
+            </div>
+
+            {/* Links de ayuda */}
+            <div className="text-center">
+                <a href="#" className="d-block mb-1 small">
+                    ¿Olvidaste tu contraseña?
+                </a>
+                <a href="#" className="small text-muted">
+                    Solicitar acceso al administrador
+                </a>
+            </div>
         </form>
     );
 };
