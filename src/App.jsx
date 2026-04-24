@@ -2,22 +2,24 @@ import { useState } from "react";
 import LoginForm from "./components/LoginForm";
 import AdminPage from "./components/AdminPage";
 import PorteriaPage from "./components/PorteriaPage";
+import CondominiosPage from "./components/CondominiosPage";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 
 function App() {
     const [paginaActual, setPaginaActual] = useState("login");
 
-    // Si el usuario está en Admin o Portería, mostramos el Layout de SaaS
-    if (paginaActual === "admin" || paginaActual === "porteria") {
+    if (paginaActual === "admin" || paginaActual === "porteria" || paginaActual === "condominios") {
         return (
             <div className="d-flex">
-                <Sidebar />
+                <Sidebar setPagina={setPaginaActual} />
                 <div className="flex-grow-1 bg-light">
                     <Navbar />
                     <main className="p-4">
                         {paginaActual === "admin" ? (
                             <AdminPage />
+                        ) : paginaActual === "condominios" ? (
+                            <CondominiosPage />
                         ) : (
                             <PorteriaPage />
                         )}
@@ -27,7 +29,6 @@ function App() {
         );
     }
 
-    // Si no, mostramos el Login con el fondo azul degradado
     return (
         <div className="login-container">
             <div className="text-center mb-4">
