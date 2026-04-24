@@ -3,13 +3,14 @@ import LoginForm from "./components/LoginForm";
 import AdminPage from "./components/AdminPage";
 import PorteriaPage from "./components/PorteriaPage";
 import CondominiosPage from "./components/CondominiosPage";
+import CarritoPanel from "./components/CarritoPanel";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 
 function App() {
     const [paginaActual, setPaginaActual] = useState("login");
 
-    if (paginaActual === "admin" || paginaActual === "porteria" || paginaActual === "condominios") {
+    if (paginaActual === "admin" || paginaActual === "porteria" || paginaActual === "condominios" || paginaActual === "carritos") {
         return (
             <div className="d-flex">
                 <Sidebar setPagina={setPaginaActual} />
@@ -20,6 +21,8 @@ function App() {
                             <AdminPage />
                         ) : paginaActual === "condominios" ? (
                             <CondominiosPage />
+                        ) : paginaActual === "carritos" ? (
+                            <CarritoPanel />
                         ) : (
                             <PorteriaPage />
                         )}
