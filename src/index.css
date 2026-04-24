@@ -27,3 +27,22 @@ html {
     background: linear-gradient(135deg, #1e40af 0%, #001a3d 100%);
     padding: 20px;
 }
+
+.card {
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+    border-radius: 12px !important;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.bg-success-subtle {
+    background-color: #d1e7dd;
+}
+.bg-warning-subtle {
+    background-color: #fff3cd;
+}
