@@ -1,9 +1,10 @@
-import React from 'react';
+import React from "react";
+import CarritoPanel from "./CarritoPanel";
 
 const AdminPage = () => {
     return (
-        <div>
-            <h1>Panel Administrador</h1>
+        <div className="animate__animated animate__fadeIn">
+            <CarritoPanel />
         </div>
     );
 };
