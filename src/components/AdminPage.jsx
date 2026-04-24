@@ -3,7 +3,7 @@ import CarritoPanel from "./CarritoPanel";
 
 const AdminPage = () => {
     return (
-        <div className="animate__animated animate__fadeIn">
+        <div className="container-fluid py-2">
             <CarritoPanel />
         </div>
     );
