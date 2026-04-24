@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LoginForm from "./components/LoginForm";
 import AdminPage from "./components/AdminPage";
 import PorteriaPage from "./components/PorteriaPage";
@@ -6,7 +6,19 @@ import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 
 function App() {
-    const [paginaActual, setPaginaActual] = useState("login");
+    const [paginaActual, setPaginaActual] = useState(() => {
+        const sesionGuardada = localStorage.getItem("paginaActual")
+        return sesionGuardada ? sesionGuardada : "login"
+
+    });
+    useEffect(() => {
+        localStorage.setItem("paginaActual", paginaActual);
+    }, [paginaActual]);
+
+    const handleLogout = () => {
+        setPaginaActual("login");
+        localStorage.removeItem("paginaActual");
+    };
 
     // Si el usuario está en Admin o Portería, mostramos el Layout de SaaS
     if (paginaActual === "admin" || paginaActual === "porteria") {
@@ -14,7 +26,7 @@ function App() {
             <div className="d-flex">
                 <Sidebar />
                 <div className="flex-grow-1 bg-light">
-                    <Navbar />
+                    <Navbar onlogout={handleLogout} />
                     <main className="p-4">
                         {paginaActual === "admin" ? (
                             <AdminPage />
