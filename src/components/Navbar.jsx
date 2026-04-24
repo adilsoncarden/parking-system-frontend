@@ -7,7 +7,7 @@ const Navbar = () => {
                 <div className="d-flex align-items-center">
                     <select
                         className="form-select form-select-sm border-0 bg-light fw-bold"
-                        style={{ width: "200px" }}
+                        style={{ width: "230px" }}
                     >
                         <option>Residencial Las Palmeras</option>
                         <option>Residencial Los Pinos</option>
@@ -18,9 +18,7 @@ const Navbar = () => {
                 <div className="ms-auto d-flex align-items-center">
                     <button className="btn btn-light position-relative me-3">
                         <i className="bi bi-bell"></i>
-                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            1
-                        </span>
+                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"></span>
                     </button>
                     <div className="d-flex align-items-center">
                         <div className="text-end me-2 d-none d-sm-block">
