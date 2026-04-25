@@ -1,16 +1,15 @@
 import { useState, useEffect } from "react";
-import LoginForm from "./components/LoginForm";
-import AdminPage from "./components/AdminPage";
-import PorteriaPage from "./components/PorteriaPage";
+import LoginForm       from "./components/LoginForm";
+import AdminPage       from "./components/AdminPage";
+import PorteriaPage    from "./components/PorteriaPage";
 import CondominiosPage from "./components/CondominiosPage";
-import CarritoPanel from "./components/CarritoPanel";
-import Sidebar from "./components/Sidebar";
-import Navbar from "./components/Navbar";
+import CarritoPanel    from "./components/CarritoPanel";
+import Sidebar         from "./components/Sidebar";
+import Navbar          from "./components/Navbar";
 
 function App() {
     const [paginaActual, setPaginaActual] = useState(() => {
-        const sesionGuardada = localStorage.getItem("paginaActual");
-        return sesionGuardada ? sesionGuardada : "login";
+        return localStorage.getItem("paginaActual") ?? "login";
     });
 
     useEffect(() => {
@@ -18,40 +17,50 @@ function App() {
     }, [paginaActual]);
 
     const handleLogout = () => {
-        setPaginaActual("login");
         localStorage.removeItem("paginaActual");
+        setPaginaActual("login");
     };
 
-    // Si no es login, mostramos el Dashboard
+    // ── Dashboard ──────────────────────────────────────
     if (paginaActual !== "login") {
         return (
             <div className="d-flex">
-                <Sidebar onLogout={handleLogout} setPagina={setPaginaActual} />
+                <Sidebar
+                    onLogout={handleLogout}
+                    setPagina={setPaginaActual}
+                    paginaActual={paginaActual}   // ← para marcar activo
+                />
                 <div className="flex-grow-1 bg-light">
                     <Navbar onLogout={handleLogout} />
                     <main className="p-4">
-                        {paginaActual === "admin" && <AdminPage />}
-                        {paginaActual === "porteria" && <PorteriaPage />}
+                        {paginaActual === "admin"       && <AdminPage />}
+                        {paginaActual === "porteria"    && <PorteriaPage />}
                         {paginaActual === "condominios" && <CondominiosPage />}
-                        {paginaActual === "carritos" && <CarritoPanel />}
+                        {paginaActual === "carritos"    && <CarritoPanel />}
                     </main>
                 </div>
             </div>
         );
     }
 
-    // Si es login, mostramos el formulario
+    // ── Login ──────────────────────────────────────────
     return (
         <div className="login-container">
-            <div className="text-center mb-4 pt-5">
-                <div className="bg-white shadow-sm d-inline-block p-3 mb-3" style={{ borderRadius: "15px" }}>
+            <div className="text-center mb-4">
+                <div
+                    className="bg-white shadow-sm d-inline-block p-3 mb-3"
+                    style={{ borderRadius: "15px" }}
+                >
                     <i className="bi bi-buildings-fill text-primary fs-1"></i>
                 </div>
                 <h2 className="fw-bold text-white mb-0">CondoSaaS</h2>
                 <p className="text-white-50 small">Sistema de Gestión de Condominios</p>
             </div>
 
-            <div className="card shadow-lg p-4 mx-auto" style={{ borderRadius: "15px", maxWidth: "400px", border: "none" }}>
+            <div
+                className="card shadow-lg p-4 mx-auto"
+                style={{ borderRadius: "15px", maxWidth: "400px", border: "none" }}
+            >
                 <div className="card-body">
                     <h3 className="text-center mb-4 fw-bold">Iniciar Sesión</h3>
                     <LoginForm onLogin={setPaginaActual} />
