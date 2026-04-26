@@ -8,7 +8,7 @@ const navItems = [
 const Sidebar = ({ onLogout, setPagina, paginaActual }) => {
     return (
         <div
-            className="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark"
+            className="d-flex flex-column flex-shrink-0 p-3 text-white sidebar-custom"
             style={{ width: "280px", minHeight: "100vh" }}
         >
             {/* Logo */}
