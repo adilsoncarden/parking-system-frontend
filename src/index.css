@@ -86,3 +86,10 @@ html {
 .bg-warning-subtle {
     background-color: #fff3cd;
 }
+
+/* =====================
+   SIDEBAR CUSTOM COLOR
+===================== */
+.sidebar-custom {
+    background-color: #112246; 
+}
