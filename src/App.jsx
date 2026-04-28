@@ -3,6 +3,7 @@ import ApartamentosPage from './components/ApartamentosPage';
 import { useState, useEffect } from "react";
 import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
+import ModalTorres from "./components/ModalTorres";
 
 function App() {
     const [paginaActual, setPaginaActual] = useState(() => {
@@ -45,9 +46,7 @@ function App() {
                             </div>
                         )}
                         {paginaActual === "torres" && (
-                            <div>
-                                <h3>Módulo Torres (Próximamente)</h3>
-                            </div>
+                            <ModalTorres />
                         )}
                         
                         {paginaActual === "pisos" && <PisosPage />}
