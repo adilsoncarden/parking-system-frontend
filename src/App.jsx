@@ -1,11 +1,6 @@
 import { useState, useEffect } from "react";
-import LoginForm       from "./components/LoginForm";
-import AdminPage       from "./components/AdminPage";
-import PorteriaPage    from "./components/PorteriaPage";
-import CondominiosPage from "./components/CondominiosPage";
-import CarritoPanel    from "./components/CarritoPanel";
-import Sidebar         from "./components/Sidebar";
-import Navbar          from "./components/Navbar";
+import LoginForm from "./components/LoginForm";
+import Sidebar from "./components/Sidebar";
 
 function App() {
     const [paginaActual, setPaginaActual] = useState(() => {
@@ -21,49 +16,76 @@ function App() {
         setPaginaActual("login");
     };
 
-    // ── Dashboard ──────────────────────────────────────
     if (paginaActual !== "login") {
         return (
-            <div className="d-flex">
+            <div id="app">
                 <Sidebar
                     onLogout={handleLogout}
                     setPagina={setPaginaActual}
-                    paginaActual={paginaActual}   // ← para marcar activo
+                    paginaActual={paginaActual}
                 />
-                <div className="flex-grow-1 bg-light">
-                    <Navbar onLogout={handleLogout} />
-                    <main className="p-4">
-                        {paginaActual === "admin"       && <AdminPage />}
-                        {paginaActual === "porteria"    && <PorteriaPage />}
-                        {paginaActual === "condominios" && <CondominiosPage />}
-                        {paginaActual === "carritos"    && <CarritoPanel />}
-                    </main>
+                <div id="main">
+                    <header className="mb-3">
+                        <a href="#" className="burger-btn d-block d-xl-none">
+                            <i className="bi bi-justify fs-3"></i>
+                        </a>
+                    </header>
+                    <div className="page-content">
+                        {/* Solo mostramos texto por ahora para que no falle */}
+                        {paginaActual === "dashboard" && (
+                            <div>
+                                <h3>Módulo Dashboard (Próximamente)</h3>
+                            </div>
+                        )}
+                        {paginaActual === "condominios" && (
+                            <div>
+                                <h3>Módulo Condominios (Próximamente)</h3>
+                            </div>
+                        )}
+                        {paginaActual === "torres" && (
+                            <div>
+                                <h3>Módulo Torres (Próximamente)</h3>
+                            </div>
+                        )}
+                        {paginaActual === "pisos" && (
+                            <div>
+                                <h3>Módulo Pisos (Próximamente)</h3>
+                            </div>
+                        )}
+                        {paginaActual === "apartamentos" && (
+                            <div>
+                                <h3>Módulo Apartamentos (Próximamente)</h3>
+                            </div>
+                        )}
+                        {paginaActual === "carritos" && (
+                            <div>
+                                <h3>Módulo Carritos (Próximamente)</h3>
+                            </div>
+                        )}
+                        {paginaActual === "config" && (
+                            <div>
+                                <h3>Módulo Configuraciones (Próximamente)</h3>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         );
     }
 
-    // ── Login ──────────────────────────────────────────
     return (
         <div className="login-container">
-            <div className="text-center mb-4">
-                <div
-                    className="bg-white shadow-sm d-inline-block p-3 mb-3"
-                    style={{ borderRadius: "15px" }}
-                >
-                    <i className="bi bi-buildings-fill text-primary fs-1"></i>
-                </div>
-                <h2 className="fw-bold text-white mb-0">CondoSaaS</h2>
-                <p className="text-white-50 small">Sistema de Gestión de Condominios</p>
-            </div>
-
             <div
                 className="card shadow-lg p-4 mx-auto"
-                style={{ borderRadius: "15px", maxWidth: "400px", border: "none" }}
+                style={{
+                    borderRadius: "15px",
+                    maxWidth: "400px",
+                    marginTop: "100px",
+                }}
             >
                 <div className="card-body">
-                    <h3 className="text-center mb-4 fw-bold">Iniciar Sesión</h3>
-                    <LoginForm onLogin={setPaginaActual} />
+                    <h3 className="text-center mb-4 fw-bold">CondoSaaS</h3>
+                    <LoginForm onLogin={() => setPaginaActual("dashboard")} />
                 </div>
             </div>
         </div>
