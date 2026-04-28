@@ -23,7 +23,8 @@ const apartamentosMock = [
     { id: 1, numero_apartamento: '101', id_piso: 1 },
     { id: 2, numero_apartamento: '102', id_piso: 1 },
     { id: 3, numero_apartamento: '201', id_piso: 2 },
-    { id: 4, numero_apartamento: '101', id_piso: 4 },
+    { id: 4, numero_apartamento: '202', id_piso: 2 },
+    { id: 5, numero_apartamento: '302', id_piso: 3 },
 ];
 
 const ApartamentosPage = () => {
