@@ -1,4 +1,5 @@
 import PisosPage from './components/PisosPage';
+import ApartamentosPage from './components/ApartamentosPage';
 import { useState, useEffect } from "react";
 import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
@@ -51,11 +52,8 @@ function App() {
                         
                         {paginaActual === "pisos" && <PisosPage />}
 
-                        {paginaActual === "apartamentos" && (
-                            <div>
-                                <h3>Módulo Apartamentos (Próximamente)</h3>
-                            </div>
-                        )}
+                        {paginaActual === "apartamentos" && <ApartamentosPage/>}
+                        
                         {paginaActual === "carritos" && (
                             <div>
                                 <h3>Módulo Carritos (Próximamente)</h3>
