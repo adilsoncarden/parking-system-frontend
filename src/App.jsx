@@ -1,6 +1,7 @@
 import CarritosPage from './components/CarritosPage';
 import CarritosPageWrapper from './components/CarritosPageWrapper';
 import PisosPage from './components/PisosPage';
+import Dashboard from './components/Dashboard';
 import ApartamentosPage from './components/ApartamentosPage';
 import CondominiosPage from './components/condominios/CondominiosPage';
 import ConfiguracionPage from './components/ConfiguracionPage';
