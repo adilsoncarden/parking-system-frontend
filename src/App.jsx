@@ -3,6 +3,7 @@ import CarritosPageWrapper from './components/CarritosPageWrapper';
 import PisosPage from './components/PisosPage';
 import ApartamentosPage from './components/ApartamentosPage';
 import CondominiosPage from './components/condominios/CondominiosPage';
+import ConfiguracionPage from './components/ConfiguracionPage';
 import { useState, useEffect } from "react";
 import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
@@ -47,9 +48,7 @@ function App() {
                         {paginaActual === "pisos" && <PisosPage />}
                         {paginaActual === "apartamentos" && <ApartamentosPage />}
                         {paginaActual === "carritos" && <CarritosPageWrapper />}
-                        {paginaActual === "config" && (
-                            <div><h3>Módulo Configuraciones (Próximamente)</h3></div>
-                        )}
+                        {paginaActual === "config" && <ConfiguracionPage />}
                     </div>
                 </div>
             </div>
