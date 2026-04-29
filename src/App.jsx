@@ -1,3 +1,4 @@
+import CarritosPage from './components/CarritosPage';
 import PisosPage from './components/PisosPage';
 import ApartamentosPage from './components/ApartamentosPage';
 import { useState, useEffect } from "react";
@@ -53,11 +54,8 @@ function App() {
 
                         {paginaActual === "apartamentos" && <ApartamentosPage/>}
                         
-                        {paginaActual === "carritos" && (
-                            <div>
-                                <h3>Módulo Carritos (Próximamente)</h3>
-                            </div>
-                        )}
+                        {paginaActual === "carritos" && <CarritosPage />}
+                        
                         {paginaActual === "config" && (
                             <div>
                                 <h3>Módulo Configuraciones (Próximamente)</h3>
