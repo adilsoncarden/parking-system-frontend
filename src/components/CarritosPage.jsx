@@ -27,7 +27,6 @@ const CarritosPage = () => {
         const interval = setInterval(() => {
             setNow(new Date());
         }, 1000);
-
         return () => clearInterval(interval);
     }, []);
 
@@ -77,14 +76,10 @@ const CarritosPage = () => {
     const calcularTiempo = (hora_inicio) => {
         const inicio = new Date(hora_inicio);
         const diffMs = now - inicio;
-
         const minutos = Math.floor(diffMs / 60000);
         const segundos = Math.floor((diffMs % 60000) / 1000);
-
         const restante = 15 - minutos - (segundos / 60);
-
         if (restante <= 0) return 'Tiempo excedido ⚠️';
-
         return `${Math.floor(restante)}:${segundos.toString().padStart(2, '0')}`;
     };
 
@@ -95,6 +90,17 @@ const CarritosPage = () => {
 
     const prestamosActivos = prestamos.filter(p => p.estado === 'activo');
     const historial = prestamos.filter(p => p.estado === 'devuelto');
+
+    // =============================================
+    // PUENTE CON CONDOMINIOS — NO MODIFICAR
+    // Guarda préstamos en localStorage y avisa
+    // a CondominiosPage en tiempo real
+    // =============================================
+    useEffect(() => {
+        localStorage.setItem("prestamos", JSON.stringify(prestamos));
+        window.dispatchEvent(new Event("prestamos-updated"));
+    }, [prestamos]);
+    // =============================================
 
     return (
         <div className="page-heading">
