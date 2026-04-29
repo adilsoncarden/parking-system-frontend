@@ -38,12 +38,8 @@ function App() {
                         </a>
                     </header>
                     <div className="page-content">
-                        {paginaActual === "dashboard" && (
-                            <div><h3>Módulo Dashboard (Próximamente)</h3></div>
-                        )}
-                        {paginaActual === "condominios" && (
-                            <CondominiosPage />
-                        )}
+                        {paginaActual === "dashboard" && <Dashboard />}
+                        {paginaActual === "condominios" && <CondominiosPage />}
                         {paginaActual === "torres" && <ModalTorres />}
                         {paginaActual === "pisos" && <PisosPage />}
                         {paginaActual === "apartamentos" && <ApartamentosPage />}
