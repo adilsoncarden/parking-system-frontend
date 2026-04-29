@@ -1,4 +1,5 @@
 import PisosPage from './components/PisosPage';
+import Dashboard from './components/Dashboard';
 import ApartamentosPage from './components/ApartamentosPage';
 import { useState, useEffect } from "react";
 import LoginForm from "./components/LoginForm";
@@ -37,11 +38,8 @@ function App() {
                     </header>
                     <div className="page-content">
                         {/* Solo mostramos texto por ahora para que no falle */}
-                        {paginaActual === "dashboard" && (
-                            <div>
-                                <h3>Módulo Dashboard (Próximamente)</h3>
-                            </div>
-                        )}
+                        {paginaActual === "dashboard" && <Dashboard />}
+                        
                         {paginaActual === "condominios" && (
                             <div>
                                 <h3>Módulo Condominios (Próximamente)</h3>
