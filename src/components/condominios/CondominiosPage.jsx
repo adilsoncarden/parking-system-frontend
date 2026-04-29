@@ -90,7 +90,7 @@ const CondominiosPage = () => {
             <section className="section">
                 <div className="row g-3">
                     {condominiosConStats.map(condo => (
-                        <div key={condo.id} className="col-12 col-md-6 col-xxl-4">
+                        <div key={condo.id} className="col-12 col-sm-6 col-xl-4">
                             <CondominioCard
                                 condominio={condo}
                                 carritosActivos={condo.carritosActivos}
@@ -98,7 +98,7 @@ const CondominiosPage = () => {
                             />
                         </div>
                     ))}
-                    <div className="col-12 col-md-6 col-xxl-4">
+                    <div className="col-12 col-sm-6 col-xl-4">
                         <CondominioAgregarCard />
                     </div>
                 </div>
