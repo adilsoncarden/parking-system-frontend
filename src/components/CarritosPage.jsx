@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const apartamentosMock = [
     { id: 1, numero_apartamento: '101', id_piso: 1, propietario: 'Juan Pérez' },
@@ -21,6 +21,15 @@ const CarritosPage = () => {
     const [carritoSeleccionado, setCarritoSeleccionado] = useState(null);
     const [form, setForm] = useState({ id_apartamento: '' });
     const [error, setError] = useState('');
+    const [now, setNow] = useState(new Date());
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setNow(new Date());
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     const carritoOcupado = (id_carrito) =>
         prestamos.find(p => p.id_carrito === id_carrito && p.estado === 'activo');
@@ -66,9 +75,22 @@ const CarritosPage = () => {
     };
 
     const calcularTiempo = (hora_inicio) => {
-        const diff = Math.floor((new Date() - new Date(hora_inicio)) / 60000);
-        if (diff < 1) return 'Recién prestado';
-        return `${diff} min`;
+        const inicio = new Date(hora_inicio);
+        const diffMs = now - inicio;
+
+        const minutos = Math.floor(diffMs / 60000);
+        const segundos = Math.floor((diffMs % 60000) / 1000);
+
+        const restante = 15 - minutos - (segundos / 60);
+
+        if (restante <= 0) return 'Tiempo excedido ⚠️';
+
+        return `${Math.floor(restante)}:${segundos.toString().padStart(2, '0')}`;
+    };
+
+    const estaMultado = (hora_inicio) => {
+        const diff = (now - new Date(hora_inicio)) / 60000;
+        return diff >= 15;
     };
 
     const prestamosActivos = prestamos.filter(p => p.estado === 'activo');
@@ -161,7 +183,11 @@ const CarritosPage = () => {
                                                 <td><i className="bi bi-cart-fill text-primary me-1"></i>{p.nombre_carrito}</td>
                                                 <td>Depa {p.numero_apartamento}</td>
                                                 <td>{p.propietario}</td>
-                                                <td><span className="badge bg-warning text-dark">{calcularTiempo(p.hora_inicio)}</span></td>
+                                                <td>
+                                                    <span className={`badge ${estaMultado(p.hora_inicio) ? 'bg-danger' : 'bg-warning text-dark'}`}>
+                                                        {calcularTiempo(p.hora_inicio)}
+                                                    </span>
+                                                </td>
                                                 <td><span className="badge bg-success">Activo</span></td>
                                                 <td>
                                                     <button
