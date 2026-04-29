@@ -1,0 +1,43 @@
+/* Layout principal responsivo */
+#app {
+    display: flex;
+    min-height: 100vh;
+}
+
+#main {
+    flex: 1;
+    min-width: 0; /* evita overflow */
+    margin-left: 300px;
+    transition: margin-left 0.3s ease;
+}
+
+@media (max-width: 1199px) {
+    #main {
+        margin-left: 0 !important;
+    }
+
+    .sidebar-wrapper {
+        left: -300px !important;
+        transition: left 0.35s cubic-bezier(0.22, 1, 0.36, 1) !important;
+        z-index: 1050;
+    }
+
+    #sidebar.active .sidebar-wrapper {
+        left: 0 !important;
+    }
+}
+
+/* El contenido de página no se desborda */
+.page-content {
+    width: 100%;
+    overflow-x: hidden;
+    padding: 0 0 2rem 0;
+}
+
+/* Overlay */
+.sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.45);
+    z-index: 1040;
+}

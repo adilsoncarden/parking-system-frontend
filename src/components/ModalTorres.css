@@ -113,3 +113,10 @@
 [data-bs-theme="dark"] .accordion-button::after {
     filter: invert(1);
 }
+
+
+@media screen and (min-width: 1200px) {
+    .page-heading .row {
+        --bs-gutter-x: 1rem;
+    }
+}
