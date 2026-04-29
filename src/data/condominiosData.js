@@ -1,4 +1,3 @@
-// Datos base de condominios — vinculados a los carritosMock de CarritosPage
 export const condominiosBase = [
     {
         id: 1,
@@ -6,8 +5,7 @@ export const condominiosBase = [
         direccion: "Av. Primavera 123",
         badge: "Residencial",
         badgeColor: "#4e6ef2",
-        imagen: "/images/condominios/condominio-los-alamos.jpg",
-        // IDs de carritos que pertenecen a este condominio
+        imagen: "/assets/images/condominios/condominio-los-alamos.jpg",
         carritoIds: [1, 2],
     },
     {
@@ -16,7 +14,7 @@ export const condominiosBase = [
         direccion: "Jr. Los Pinos 456",
         badge: "Premium",
         badgeColor: "#16a34a",
-        imagen: "/images/condominios/condominio-el-bosque.jpg",
+        imagen: "/assets/images/condominios/condominio-el-bosque.jpg",
         carritoIds: [3, 4],
     },
 ];
