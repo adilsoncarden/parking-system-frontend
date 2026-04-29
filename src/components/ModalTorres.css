@@ -1,0 +1,115 @@
+:root {
+    /* Color de marca exacto */
+    --brand-blue: #4e6ef2;
+    --brand-blue-hover: #3b5bdb;
+    --shadow-primary: 0 4px 12px rgba(78, 110, 242, 0.25);
+}
+
+/* Contenedor Principal Adaptable */
+.torre-container {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    min-height: 100vh;
+}
+
+/* Card de Torre Simplificada */
+.torre-card {
+    background-color: var(--bs-tertiary-bg) !important;
+    border: 1px solid var(--bs-border-color-translucent) !important;
+    border-radius: 1.25rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.torre-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1) !important;
+}
+
+
+/* Info Boxes (Pisos y Aptos) */
+.info-box {
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color-translucent);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    text-align: center;
+}
+
+.info-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--bs-secondary-color);
+    margin-bottom: 2px;
+}
+
+.info-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--bs-body-color);
+}
+
+/* Botón Primario Azul Marca */
+.btn-brand {
+    background-color: var(--brand-blue) !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    padding: 0.8rem;
+    border-radius: 0.75rem !important;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-primary);
+}
+
+.btn-brand:hover {
+    background-color: var(--brand-blue-hover) !important;
+    transform: scale(1.02);
+    box-shadow: 0 6px 15px rgba(78, 110, 242, 0.4);
+}
+
+.btn-brand:active {
+    transform: scale(0.98);
+}
+
+/* Badges de Estado */
+.state-badge {
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 0.5em 1em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Utilidades de Tema */
+.border-theme {
+    border-color: var(--bs-border-color-translucent) !important;
+}
+
+.text-brand {
+    color: var(--brand-blue) !important;
+}
+
+/* Acordeón Theme-Aware */
+.accordion-item {
+    background-color: var(--bs-tertiary-bg) !important;
+    border: 1px solid var(--bs-border-color-translucent) !important;
+}
+
+.accordion-button {
+    background-color: transparent !important;
+    color: var(--bs-body-color) !important;
+}
+
+.accordion-button:not(.collapsed) {
+    color: var(--brand-blue) !important;
+    box-shadow: none;
+}
+
+.accordion-button::after {
+    filter: brightness(0.5);
+}
+
+[data-bs-theme="dark"] .accordion-button::after {
+    filter: invert(1);
+}
