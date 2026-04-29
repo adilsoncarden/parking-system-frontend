@@ -1,6 +1,7 @@
 import CarritosPage from './components/CarritosPage';
 import CarritosPageWrapper from './components/CarritosPageWrapper';
 import PisosPage from './components/PisosPage';
+import Dashboard from './components/Dashboard';
 import ApartamentosPage from './components/ApartamentosPage';
 import CondominiosPage from './components/condominios/CondominiosPage';
 import ConfiguracionPage from './components/ConfiguracionPage';
@@ -38,12 +39,8 @@ function App() {
                         </a>
                     </header>
                     <div className="page-content">
-                        {paginaActual === "dashboard" && (
-                            <div><h3>Módulo Dashboard (Próximamente)</h3></div>
-                        )}
-                        {paginaActual === "condominios" && (
-                            <CondominiosPage />
-                        )}
+                        {paginaActual === "dashboard" && <Dashboard />}
+                        {paginaActual === "condominios" && <CondominiosPage />}
                         {paginaActual === "torres" && <ModalTorres />}
                         {paginaActual === "pisos" && <PisosPage />}
                         {paginaActual === "apartamentos" && <ApartamentosPage />}
