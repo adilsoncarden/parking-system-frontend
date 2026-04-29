@@ -11,7 +11,6 @@ const carritosMock = [
 ];
 
 const CondominiosPage = () => {
-    // Lee préstamos del localStorage
     const [prestamos, setPrestamos] = useState(() => {
         try {
             const saved = localStorage.getItem("prestamos");
@@ -21,7 +20,6 @@ const CondominiosPage = () => {
         }
     });
 
-    // Escucha cambios en tiempo real cuando CarritosPage actualiza
     useEffect(() => {
         const handleUpdate = () => {
             try {
@@ -35,7 +33,6 @@ const CondominiosPage = () => {
         return () => window.removeEventListener("prestamos-updated", handleUpdate);
     }, []);
 
-    // Calcula stats por condominio en tiempo real
     const condominiosConStats = useMemo(() => {
         return condominiosBase.map(condo => {
             const carritosDelCondo = carritosMock.filter(c =>
@@ -59,7 +56,7 @@ const CondominiosPage = () => {
         <div className="page-heading">
             {/* Header */}
             <div className="page-title">
-                <div className="row align-items-center mb-2">
+                <div className="row align-items-center mb-3">
                     <div className="col-12 col-md-6 order-md-1 order-last">
                         <h3 className="mb-1">Condominios</h3>
                         <p className="text-subtitle text-muted mb-0">
@@ -91,9 +88,9 @@ const CondominiosPage = () => {
 
             {/* Grid responsivo */}
             <section className="section">
-                <div className="row g-4">
+                <div className="row g-3">
                     {condominiosConStats.map(condo => (
-                        <div key={condo.id} className="col-12 col-sm-6 col-xl-4">
+                        <div key={condo.id} className="col-12 col-md-6 col-xxl-4">
                             <CondominioCard
                                 condominio={condo}
                                 carritosActivos={condo.carritosActivos}
@@ -101,7 +98,7 @@ const CondominiosPage = () => {
                             />
                         </div>
                     ))}
-                    <div className="col-12 col-sm-6 col-xl-4">
+                    <div className="col-12 col-md-6 col-xxl-4">
                         <CondominioAgregarCard />
                     </div>
                 </div>
