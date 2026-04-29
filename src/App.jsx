@@ -5,6 +5,8 @@ import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
 import ModalTorres from "./components/ModalTorres";
 
+import ConfiguracionPage from './components/ConfiguracionPage';
+
 function App() {
     const [paginaActual, setPaginaActual] = useState(() => {
         return localStorage.getItem("paginaActual") ?? "login";
@@ -58,11 +60,7 @@ function App() {
                                 <h3>Módulo Carritos (Próximamente)</h3>
                             </div>
                         )}
-                        {paginaActual === "config" && (
-                            <div>
-                                <h3>Módulo Configuraciones (Próximamente)</h3>
-                            </div>
-                        )}
+                        {paginaActual === "config" && <ConfiguracionPage />}
                     </div>
                 </div>
             </div>
