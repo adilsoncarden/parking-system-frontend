@@ -1,16 +1,61 @@
-# React + Vite
+# 🚗 Sistema de Gestión de Condominios CondoSaaS
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 📌 Descripción del Proyecto
 
-Currently, two official plugins are available:
+Plataforma web desarrollada para la administración moderna de condominios residenciales, enfocada en el control vehicular, gestión de estacionamientos y administración de activos comunes.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+El sistema trabaja bajo arquitectura **SaaS (Software as a Service)**, permitiendo gestionar múltiples condominios desde una sola plataforma, manteniendo independencia de datos y configuración por cada cliente.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+# 🎯 Objetivo General
 
-## Expanding the ESLint configuration
+Optimizar los procesos administrativos, operativos y de seguridad dentro de condominios mediante una solución digital escalable, segura y eficiente.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+# 🚨 Problemática Actual
+
+Muchos condominios manejan sus operaciones de forma manual o con herramientas dispersas, generando:
+
+- Falta de control vehicular
+- Ingresos no autorizados
+- Demoras en portería
+- Pérdida de registros
+- Mal uso de activos comunes
+- Cobros no controlados de multas
+- Baja trazabilidad administrativa
+
+---
+
+# ✅ Solución Propuesta
+
+Implementación de un sistema modular compuesto por:
+
+## 🔹 Módulo Administrativo
+
+- Gestión de condominios
+- Torres, pisos y apartamentos
+- Usuarios y roles
+- Configuración de multas
+- Gestión de carritos de carga
+- Reportes generales
+
+## 🔹 Módulo Parqueo y Portería
+
+- Registro de ingreso y salida vehicular
+- Escaneo OCR de placas
+- Validación automática de acceso
+- Registro manual de contingencia
+- Historial vehicular
+
+---
+
+# 🧱 Arquitectura del Sistema
+
+Modelo Multi-Tenant SaaS:
+
+```text
+1 Plataforma = N Condominios
+Cada condominio = Datos independientes
+```
