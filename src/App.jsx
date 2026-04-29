@@ -1,6 +1,8 @@
 import CarritosPage from './components/CarritosPage';
+import CarritosPageWrapper from './components/CarritosPageWrapper';
 import PisosPage from './components/PisosPage';
 import ApartamentosPage from './components/ApartamentosPage';
+import CondominiosPage from './components/condominios/CondominiosPage';
 import { useState, useEffect } from "react";
 import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
@@ -35,31 +37,18 @@ function App() {
                         </a>
                     </header>
                     <div className="page-content">
-                        {/* Solo mostramos texto por ahora para que no falle */}
                         {paginaActual === "dashboard" && (
-                            <div>
-                                <h3>Módulo Dashboard (Próximamente)</h3>
-                            </div>
+                            <div><h3>Módulo Dashboard (Próximamente)</h3></div>
                         )}
                         {paginaActual === "condominios" && (
-                            <div>
-                                <h3>Módulo Condominios (Próximamente)</h3>
-                            </div>
+                            <CondominiosPage />
                         )}
-                        {paginaActual === "torres" && (
-                            <ModalTorres />
-                        )}
-                        
+                        {paginaActual === "torres" && <ModalTorres />}
                         {paginaActual === "pisos" && <PisosPage />}
-
-                        {paginaActual === "apartamentos" && <ApartamentosPage/>}
-                        
-                        {paginaActual === "carritos" && <CarritosPage />}
-                        
+                        {paginaActual === "apartamentos" && <ApartamentosPage />}
+                        {paginaActual === "carritos" && <CarritosPageWrapper />}
                         {paginaActual === "config" && (
-                            <div>
-                                <h3>Módulo Configuraciones (Próximamente)</h3>
-                            </div>
+                            <div><h3>Módulo Configuraciones (Próximamente)</h3></div>
                         )}
                     </div>
                 </div>
@@ -71,11 +60,7 @@ function App() {
         <div className="login-container">
             <div
                 className="card shadow-lg p-4 mx-auto"
-                style={{
-                    borderRadius: "15px",
-                    maxWidth: "400px",
-                    marginTop: "100px",
-                }}
+                style={{ borderRadius: "15px", maxWidth: "400px", marginTop: "100px" }}
             >
                 <div className="card-body">
                     <h3 className="text-center mb-4 fw-bold">CondoSaaS</h3>
