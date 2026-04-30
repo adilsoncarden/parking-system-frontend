@@ -26,13 +26,28 @@ function App() {
         return localStorage.getItem("paginaActual") ?? "login";
     });
 
+    // Estado del sidebar móvil (abierto/cerrado)
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
     useEffect(() => {
         localStorage.setItem("paginaActual", paginaActual);
     }, [paginaActual]);
 
+    // Cambiar de página cierra el sidebar en móvil
+    const cambiarPagina = (pagina) => {
+        setPaginaActual(pagina);
+        setSidebarOpen(false);
+    };
+
     const handleLogout = () => {
         localStorage.removeItem("paginaActual");
         setPaginaActual("login");
+        setSidebarOpen(false);
+    };
+
+    const toggleSidebar = (e) => {
+        e.preventDefault();
+        setSidebarOpen(prev => !prev);
     };
 
     if (paginaActual !== "login") {
@@ -40,12 +55,32 @@ function App() {
             <div id="app">
                 <Sidebar
                     onLogout={handleLogout}
-                    setPagina={setPaginaActual}
+                    setPagina={cambiarPagina}
                     paginaActual={paginaActual}
+                    sidebarOpen={sidebarOpen}
                 />
+
+                {/* Overlay oscuro en móvil cuando el sidebar está abierto */}
+                {sidebarOpen && (
+                    <div
+                        onClick={() => setSidebarOpen(false)}
+                        style={{
+                            position: "fixed",
+                            inset: 0,
+                            backgroundColor: "rgba(0,0,0,0.5)",
+                            zIndex: 900,
+                        }}
+                        className="d-xl-none"
+                    />
+                )}
+
                 <div id="main">
                     <header className="mb-3">
-                        <a href="#" className="burger-btn d-block d-xl-none">
+                        <a
+                            href="#"
+                            className="burger-btn d-block d-xl-none"
+                            onClick={toggleSidebar}
+                        >
                             <i className="bi bi-justify fs-3"></i>
                         </a>
                     </header>
