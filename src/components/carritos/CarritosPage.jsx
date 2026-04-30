@@ -1,19 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
-const apartamentosMock = [
-    { id: 1, numero_apartamento: '101', id_piso: 1, propietario: 'Juan Pérez' },
-    { id: 2, numero_apartamento: '102', id_piso: 1, propietario: 'María López' },
-    { id: 3, numero_apartamento: '201', id_piso: 2, propietario: 'Carlos Ruiz' },
-    { id: 4, numero_apartamento: '202', id_piso: 2, propietario: 'Ana Torres' },
-    { id: 5, numero_apartamento: '301', id_piso: 3, propietario: 'Luis Mora' },
-];
-
-const carritosMock = [
-    { id: 1, nombre: 'Carrito #1' },
-    { id: 2, nombre: 'Carrito #2' },
-    { id: 3, nombre: 'Carrito #3' },
-    { id: 4, nombre: 'Carrito #4' },
-];
+import { apartamentosMock, carritosMock } from "../../data/condominiosData";
 
 const CarritosPage = () => {
     const [prestamos, setPrestamos] = useState([]);
@@ -24,11 +10,16 @@ const CarritosPage = () => {
     const [now, setNow] = useState(new Date());
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setNow(new Date());
-        }, 1000);
+        const interval = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(interval);
     }, []);
+
+    // ── Puente con CondominiosPage ──────────────────
+    useEffect(() => {
+        localStorage.setItem("prestamos", JSON.stringify(prestamos));
+        window.dispatchEvent(new Event("prestamos-updated"));
+    }, [prestamos]);
+    // ───────────────────────────────────────────────
 
     const carritoOcupado = (id_carrito) =>
         prestamos.find(p => p.id_carrito === id_carrito && p.estado === 'activo');
@@ -90,17 +81,6 @@ const CarritosPage = () => {
 
     const prestamosActivos = prestamos.filter(p => p.estado === 'activo');
     const historial = prestamos.filter(p => p.estado === 'devuelto');
-
-    // =============================================
-    // PUENTE CON CONDOMINIOS — NO MODIFICAR
-    // Guarda préstamos en localStorage y avisa
-    // a CondominiosPage en tiempo real
-    // =============================================
-    useEffect(() => {
-        localStorage.setItem("prestamos", JSON.stringify(prestamos));
-        window.dispatchEvent(new Event("prestamos-updated"));
-    }, [prestamos]);
-    // =============================================
 
     return (
         <div className="page-heading">
