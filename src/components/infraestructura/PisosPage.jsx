@@ -1,26 +1,8 @@
 import React, { useState } from 'react';
-
-// Datos mock basados en las tablas
-const condominiosMock = [
-    { id: 1, nombre: 'Condominio Los Álamos', direccion: 'Av. Primavera 123' }
-];
-
-const torresMock = [
-    { id: 1, nombre: 'Torre A', id_condominio: 1 },
-    { id: 2, nombre: 'Torre B', id_condominio: 1 },
-    { id: 3, nombre: 'Torre C', id_condominio: 1 }
-];
-
-const pisosMock = [
-    { id: 1, numero_piso: 1, id_torre: 1 },
-    { id: 2, numero_piso: 2, id_torre: 1 },
-    { id: 3, numero_piso: 3, id_torre: 1 },
-    { id: 4, numero_piso: 1, id_torre: 2 },
-    { id: 5, numero_piso: 2, id_torre: 2 }
-];
+import { condominiosBase, torresMock, pisosMock as pisosMockData } from "../../data/condominiosData";
 
 const PisosPage = () => {
-    const [pisos, setPisos] = useState(pisosMock);
+    const [pisos, setPisos] = useState(pisosMockData);
     const [filtroTorre, setFiltroTorre] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [modoEdicion, setModoEdicion] = useState(false);
@@ -36,7 +18,7 @@ const PisosPage = () => {
     const getCondominioNombre = (id_torre) => {
         const torre = torresMock.find(t => t.id === id_torre);
         if (!torre) return '-';
-        const condo = condominiosMock.find(c => c.id === torre.id_condominio);
+        const condo = condominiosBase.find(c => c.id === torre.id_condominio);
         return condo ? condo.nombre : '-';
     };
 
@@ -73,7 +55,6 @@ const PisosPage = () => {
             setError('El número de piso debe ser un número positivo.');
             return;
         }
-
         if (modoEdicion) {
             setPisos(pisos.map(p =>
                 p.id === pisoSeleccionado.id
@@ -194,7 +175,6 @@ const PisosPage = () => {
                 </div>
             </section>
 
-            {/* MODAL */}
             {showModal && (
                 <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
                     <div className="modal-dialog modal-dialog-centered">
