@@ -1,14 +1,25 @@
-import CarritosPage from './components/CarritosPage';
-import CarritosPageWrapper from './components/CarritosPageWrapper';
-import PisosPage from './components/PisosPage';
-import Dashboard from './components/Dashboard';
-import ApartamentosPage from './components/ApartamentosPage';
-import CondominiosPage from './components/condominios/CondominiosPage';
-import ConfiguracionPage from './components/ConfiguracionPage';
 import { useState, useEffect } from "react";
-import LoginForm from "./components/LoginForm";
-import Sidebar from "./components/Sidebar";
-import ModalTorres from "./components/ModalTorres";
+
+// ── shared ──────────────────────────────────────────
+import LoginForm from "./components/shared/LoginForm";
+import Sidebar   from "./components/shared/Sidebar";
+import Dashboard from "./components/shared/Dashboard";
+
+// ── condominios ──────────────────────────────────────
+import CondominiosPage from "./components/condominios/CondominiosPage";
+
+// ── torres ───────────────────────────────────────────
+import ModalTorres from "./components/torres/ModalTorres";
+
+// ── infraestructura ───────────────────────────────────
+import PisosPage        from "./components/infraestructura/PisosPage";
+import ApartamentosPage from "./components/infraestructura/ApartamentosPage";
+
+// ── carritos ──────────────────────────────────────────
+import CarritosPageWrapper from "./components/carritos/CarritosPageWrapper";
+
+// ── config ────────────────────────────────────────────
+import ConfiguracionPage from "./components/config/ConfiguracionPage";
 
 function App() {
     const [paginaActual, setPaginaActual] = useState(() => {
@@ -39,13 +50,13 @@ function App() {
                         </a>
                     </header>
                     <div className="page-content">
-                        {paginaActual === "dashboard" && <Dashboard />}
-                        {paginaActual === "condominios" && <CondominiosPage />}
-                        {paginaActual === "torres" && <ModalTorres />}
-                        {paginaActual === "pisos" && <PisosPage />}
+                        {paginaActual === "dashboard"    && <Dashboard />}
+                        {paginaActual === "condominios"  && <CondominiosPage />}
+                        {paginaActual === "torres"       && <ModalTorres />}
+                        {paginaActual === "pisos"        && <PisosPage />}
                         {paginaActual === "apartamentos" && <ApartamentosPage />}
-                        {paginaActual === "carritos" && <CarritosPageWrapper />}
-                        {paginaActual === "config" && <ConfiguracionPage />}
+                        {paginaActual === "carritos"     && <CarritosPageWrapper />}
+                        {paginaActual === "config"       && <ConfiguracionPage />}
                     </div>
                 </div>
             </div>
