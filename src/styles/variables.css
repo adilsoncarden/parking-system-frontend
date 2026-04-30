@@ -1,0 +1,29 @@
+/* ═══════════════════════════════════════════════════════════
+   VARIABLES.CSS — Tokens de diseño del proyecto
+   Centraliza valores reutilizables. Cambias aquí, cambia todo.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+    /* ── Color de marca ── */
+    --brand-blue: #4e6ef2;
+    --brand-blue-hover: #3b5bdb;
+    --shadow-primary: 0 4px 12px rgba(78, 110, 242, 0.25);
+
+    /* ── Sidebar ── */
+    --sidebar-width: 260px;
+    --sidebar-z-index: 1050;
+    --sidebar-overlay-z-index: 900;
+    --sidebar-transition: transform 0.3s ease;
+
+    /* ── Breakpoints (referencia, no se usan en CSS) ── */
+    --bp-sm: 576px;
+    --bp-md: 768px;
+    --bp-lg: 992px;
+    --bp-xl: 1200px;
+
+    /* ── Radios ── */
+    --radius-sm: 8px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+}
