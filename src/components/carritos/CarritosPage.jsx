@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { apartamentosMock, carritosMock } from "../../data/condominiosData";
+import { carritoService } from "../../services/carritoService";
+import { apartamentoService } from "../../services/apartamentoService";
 
 const CarritosPage = () => {
+    const [carritos, setCarritos] = useState([]);
+    const [apartamentos, setApartamentos] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const [prestamos, setPrestamos] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [carritoSeleccionado, setCarritoSeleccionado] = useState(null);
@@ -9,17 +14,39 @@ const CarritosPage = () => {
     const [error, setError] = useState('');
     const [now, setNow] = useState(new Date());
 
+    // Carga inicial desde servicios
+    useEffect(() => {
+        const cargarDatos = async () => {
+            const [carritosData, apartamentosData] = await Promise.all([
+                carritoService.getAll(),
+                apartamentoService.getAll(),
+            ]);
+            setCarritos(carritosData);
+
+            // Necesitamos también el "propietario" para el carrito.
+            // Como no viene en el mock de apartamentos del servicio,
+            // armamos uno simple con el número de apartamento.
+            const conPropietario = apartamentosData.map(a => ({
+                ...a,
+                propietario: a.propietario || `Residente ${a.numero_apartamento}`,
+            }));
+            setApartamentos(conPropietario);
+            setLoading(false);
+        };
+        cargarDatos();
+    }, []);
+
+    // Reloj para los timers
     useEffect(() => {
         const interval = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(interval);
     }, []);
 
-    // ── Puente con CondominiosPage ──────────────────
+    // Puente con CondominiosPage (mientras no haya backend)
     useEffect(() => {
         localStorage.setItem("prestamos", JSON.stringify(prestamos));
         window.dispatchEvent(new Event("prestamos-updated"));
     }, [prestamos]);
-    // ───────────────────────────────────────────────
 
     const carritoOcupado = (id_carrito) =>
         prestamos.find(p => p.id_carrito === id_carrito && p.estado === 'activo');
@@ -41,7 +68,7 @@ const CarritosPage = () => {
             setError('Selecciona un apartamento.');
             return;
         }
-        const apto = apartamentosMock.find(a => a.id === parseInt(form.id_apartamento));
+        const apto = apartamentos.find(a => a.id === parseInt(form.id_apartamento));
         const nuevoPrestamo = {
             id: Date.now(),
             id_carrito: carritoSeleccionado.id,
@@ -82,6 +109,18 @@ const CarritosPage = () => {
     const prestamosActivos = prestamos.filter(p => p.estado === 'activo');
     const historial = prestamos.filter(p => p.estado === 'devuelto');
 
+    if (loading) {
+        return (
+            <div className="page-heading">
+                <div className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="page-heading">
             <div className="page-title">
@@ -98,7 +137,7 @@ const CarritosPage = () => {
             {/* TARJETAS DE CARRITOS */}
             <section className="section">
                 <div className="row">
-                    {carritosMock.map(carrito => {
+                    {carritos.map(carrito => {
                         const ocupado = carritoOcupado(carrito.id);
                         return (
                             <div className="col-12 col-sm-6 col-lg-3 mb-4" key={carrito.id}>
@@ -256,7 +295,7 @@ const CarritosPage = () => {
                                         onChange={e => setForm({ ...form, id_apartamento: e.target.value })}
                                     >
                                         <option value="">-- Seleccionar apartamento --</option>
-                                        {apartamentosMock.map(a => (
+                                        {apartamentos.map(a => (
                                             <option key={a.id} value={a.id}>
                                                 Depa {a.numero_apartamento} — {a.propietario}
                                             </option>

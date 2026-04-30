@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 
+// ── services ─────────────────────────────────────────
+import { authService } from "./services/authService";
+
 // ── shared ──────────────────────────────────────────
 import LoginForm from "./components/shared/LoginForm";
 import Sidebar   from "./components/shared/Sidebar";
@@ -27,7 +30,6 @@ import ConfiguracionPage from "./components/config/ConfiguracionPage";
 // ═══════════════════════════════════════════════════════
 function PrivateLayout({ onLogout, children }) {
     const location = useLocation();
-    // El sidebar es key-driven: cada ruta nueva crea uno cerrado.
     return (
         <PrivateLayoutInner
             key={location.pathname}
@@ -86,7 +88,6 @@ function PrivateLayoutInner({ onLogout, children }) {
 
 // ═══════════════════════════════════════════════════════
 // Ruta protegida — bloquea acceso si no hay sesión
-// (Por ahora usa localStorage, más adelante usará JWT)
 // ═══════════════════════════════════════════════════════
 function ProtectedRoute({ isAuthenticated, children }) {
     if (!isAuthenticated) {
@@ -118,29 +119,25 @@ function LoginPage({ onLogin }) {
 // Componente raíz que vive dentro del Router
 // ═══════════════════════════════════════════════════════
 function AppContent() {
-    const [isAuthenticated, setIsAuthenticated] = useState(() => {
-        return localStorage.getItem("isAuthenticated") === "true";
-    });
+    const [isAuthenticated, setIsAuthenticated] = useState(() => authService.isAuthenticated());
 
     const navigate = useNavigate();
 
-    // Sincroniza isAuthenticated con localStorage si cambia desde otra pestaña
+    // Sincroniza si el localStorage cambia desde otra pestaña
     useEffect(() => {
-        const handler = () => {
-            setIsAuthenticated(localStorage.getItem("isAuthenticated") === "true");
-        };
+        const handler = () => setIsAuthenticated(authService.isAuthenticated());
         window.addEventListener("storage", handler);
         return () => window.removeEventListener("storage", handler);
     }, []);
 
     const handleLogin = () => {
-        localStorage.setItem("isAuthenticated", "true");
+        // El authService ya guardó token y user en localStorage
         setIsAuthenticated(true);
         navigate("/dashboard");
     };
 
     const handleLogout = () => {
-        localStorage.removeItem("isAuthenticated");
+        authService.logout();
         setIsAuthenticated(false);
         navigate("/login");
     };
@@ -158,86 +155,45 @@ function AppContent() {
             />
 
             {/* Rutas protegidas */}
-            <Route
-                path="/dashboard"
-                element={
-                    <ProtectedRoute isAuthenticated={isAuthenticated}>
-                        <PrivateLayout onLogout={handleLogout}>
-                            <Dashboard />
-                        </PrivateLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/condominios"
-                element={
-                    <ProtectedRoute isAuthenticated={isAuthenticated}>
-                        <PrivateLayout onLogout={handleLogout}>
-                            <CondominiosPage />
-                        </PrivateLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/torres"
-                element={
-                    <ProtectedRoute isAuthenticated={isAuthenticated}>
-                        <PrivateLayout onLogout={handleLogout}>
-                            <ModalTorres />
-                        </PrivateLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/pisos"
-                element={
-                    <ProtectedRoute isAuthenticated={isAuthenticated}>
-                        <PrivateLayout onLogout={handleLogout}>
-                            <PisosPage />
-                        </PrivateLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/apartamentos"
-                element={
-                    <ProtectedRoute isAuthenticated={isAuthenticated}>
-                        <PrivateLayout onLogout={handleLogout}>
-                            <ApartamentosPage />
-                        </PrivateLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/carritos"
-                element={
-                    <ProtectedRoute isAuthenticated={isAuthenticated}>
-                        <PrivateLayout onLogout={handleLogout}>
-                            <CarritosPageWrapper />
-                        </PrivateLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/config"
-                element={
-                    <ProtectedRoute isAuthenticated={isAuthenticated}>
-                        <PrivateLayout onLogout={handleLogout}>
-                            <ConfiguracionPage />
-                        </PrivateLayout>
-                    </ProtectedRoute>
-                }
-            />
+            <Route path="/dashboard" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <PrivateLayout onLogout={handleLogout}><Dashboard /></PrivateLayout>
+                </ProtectedRoute>
+            }/>
+            <Route path="/condominios" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <PrivateLayout onLogout={handleLogout}><CondominiosPage /></PrivateLayout>
+                </ProtectedRoute>
+            }/>
+            <Route path="/torres" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <PrivateLayout onLogout={handleLogout}><ModalTorres /></PrivateLayout>
+                </ProtectedRoute>
+            }/>
+            <Route path="/pisos" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <PrivateLayout onLogout={handleLogout}><PisosPage /></PrivateLayout>
+                </ProtectedRoute>
+            }/>
+            <Route path="/apartamentos" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <PrivateLayout onLogout={handleLogout}><ApartamentosPage /></PrivateLayout>
+                </ProtectedRoute>
+            }/>
+            <Route path="/carritos" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <PrivateLayout onLogout={handleLogout}><CarritosPageWrapper /></PrivateLayout>
+                </ProtectedRoute>
+            }/>
+            <Route path="/config" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <PrivateLayout onLogout={handleLogout}><ConfiguracionPage /></PrivateLayout>
+                </ProtectedRoute>
+            }/>
 
             {/* Redirección por defecto */}
-            <Route
-                path="/"
-                element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />}
-            />
-            <Route
-                path="*"
-                element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />}
-            />
+            <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />}/>
+            <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />}/>
         </Routes>
     );
 }

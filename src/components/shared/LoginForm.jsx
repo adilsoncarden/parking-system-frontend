@@ -1,36 +1,35 @@
-import React from "react";
+import React, { useState } from "react";
+import { authService } from "../../services/authService";
 
 const LoginForm = ({ onLogin }) => {
-    const [email, setEmail] = React.useState('');
-    const [password, setPassword] = React.useState('');
-    const [rol, setRol] = React.useState('');
-    const [error, setError] = React.useState('');
-    const usuarios = [
-        { email: 'admin@condominio.com', password: 'admin123', rol: 'admin' },
-        { email: 'portero@condominio.com', password: 'portero123', rol: 'porteria' }
-    ];
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
-        if (!email || !password || !rol) {
+        if (!email || !password) {
             setError('Por favor complete todos los campos.');
             return;
         }
 
-        const usuario = usuarios.find(
-            (u) => u.email === email && u.password === password && u.rol === rol
-        );
+        setLoading(true);
+        const result = await authService.login({ email, password });
+        setLoading(false);
 
-        if (!usuario) {
-            setError('Credenciales incorrectas. Verifique sus datos.');
+        if (!result.ok) {
+            setError(result.error || 'Credenciales incorrectas. Verifique sus datos.');
             return;
         }
 
-        onLogin(usuario.rol);
+        // Avisa al App.jsx que el login fue exitoso
+        onLogin(result.user);
     };
-    const [showPassword, setShowPassword] = React.useState(false);
+
     return (
         <form onSubmit={handleSubmit}>
             {/* Input de Correo */}
@@ -46,43 +45,34 @@ const LoginForm = ({ onLogin }) => {
                         placeholder="ejemplo@correo.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
                     />
                 </div>
             </div>
 
             {/* Input de Contraseña */}
-            <div className="input-group">
-                <span className="input-group-text">
-                    <i className="bi bi-lock"></i>
-                </span>
-                <input
-                    type={showPassword ? 'text' : 'password'}
-                    className="form-control"
-                    placeholder="********"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-                <button
-                    type="button"
-                    className="input-group-text bg-white"
-                    onClick={() => setShowPassword(!showPassword)}
-                >
-                    <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
-                </button>
-            </div>
-
-            {/* Selector de Rol */}
             <div className="mb-3">
-                <label className="form-label">Rol de Usuario</label>
-                <select
-                    className="form-select"
-                    value={rol}
-                    onChange={(e) => setRol(e.target.value)}
-                >
-                    <option value="">Seleccione un rol</option>
-                    <option value="admin">Administrador</option>
-                    <option value="porteria">Portería</option>
-                </select>
+                <label className="form-label">Contraseña</label>
+                <div className="input-group">
+                    <span className="input-group-text">
+                        <i className="bi bi-lock"></i>
+                    </span>
+                    <input
+                        type={showPassword ? 'text' : 'password'}
+                        className="form-control"
+                        placeholder="********"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                    />
+                    <button
+                        type="button"
+                        className="input-group-text bg-white"
+                        onClick={() => setShowPassword(!showPassword)}
+                    >
+                        <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                    </button>
+                </div>
             </div>
 
             {/* Mensaje de error */}
@@ -94,8 +84,19 @@ const LoginForm = ({ onLogin }) => {
 
             {/* Botón de Ingreso */}
             <div className="d-grid gap-2 mb-3">
-                <button type="submit" className="btn btn-primary">
-                    Ingresar al Sistema
+                <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Ingresando...
+                        </>
+                    ) : (
+                        'Ingresar al Sistema'
+                    )}
                 </button>
             </div>
 

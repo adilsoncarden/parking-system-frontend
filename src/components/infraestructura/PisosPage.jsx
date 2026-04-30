@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
-import { condominiosBase, torresMock, pisosMock as pisosMockData } from "../../data/condominiosData";
+import React, { useState, useEffect } from 'react';
+import { pisoService } from "../../services/pisoService";
+import { torreService } from "../../services/torreService";
+import { condominioService } from "../../services/condominioService";
 
 const PisosPage = () => {
-    const [pisos, setPisos] = useState(pisosMockData);
+    const [pisos, setPisos] = useState([]);
+    const [torres, setTorres] = useState([]);
+    const [condominios, setCondominios] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const [filtroTorre, setFiltroTorre] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [modoEdicion, setModoEdicion] = useState(false);
@@ -10,15 +16,32 @@ const PisosPage = () => {
     const [form, setForm] = useState({ numero_piso: '', id_torre: '' });
     const [error, setError] = useState('');
 
+    // Carga inicial de datos desde los servicios
+    useEffect(() => {
+        const cargarDatos = async () => {
+            const [pisosData, torresData, condosData] = await Promise.all([
+                pisoService.getAll(),
+                torreService.getAll(),
+                condominioService.getAll(),
+            ]);
+            setPisos(pisosData);
+            setTorres(torresData);
+            setCondominios(condosData);
+            setLoading(false);
+        };
+        cargarDatos();
+    }, []);
+
+    // Helpers para mostrar nombres
     const getTorreNombre = (id_torre) => {
-        const torre = torresMock.find(t => t.id === id_torre);
+        const torre = torres.find(t => t.id === id_torre);
         return torre ? torre.nombre : '-';
     };
 
     const getCondominioNombre = (id_torre) => {
-        const torre = torresMock.find(t => t.id === id_torre);
+        const torre = torres.find(t => t.id === id_torre);
         if (!torre) return '-';
-        const condo = condominiosBase.find(c => c.id === torre.id_condominio);
+        const condo = condominios.find(c => c.id === torre.id_condominio);
         return condo ? condo.nombre : '-';
     };
 
@@ -46,7 +69,7 @@ const PisosPage = () => {
         setError('');
     };
 
-    const handleGuardar = () => {
+    const handleGuardar = async () => {
         if (!form.numero_piso || !form.id_torre) {
             setError('Por favor completa todos los campos.');
             return;
@@ -55,28 +78,43 @@ const PisosPage = () => {
             setError('El número de piso debe ser un número positivo.');
             return;
         }
+
+        const payload = {
+            numero_piso: parseInt(form.numero_piso),
+            id_torre: parseInt(form.id_torre),
+        };
+
         if (modoEdicion) {
-            setPisos(pisos.map(p =>
-                p.id === pisoSeleccionado.id
-                    ? { ...p, numero_piso: parseInt(form.numero_piso), id_torre: parseInt(form.id_torre) }
-                    : p
-            ));
+            await pisoService.update(pisoSeleccionado.id, payload);
         } else {
-            const nuevoId = Math.max(...pisos.map(p => p.id)) + 1;
-            setPisos([...pisos, {
-                id: nuevoId,
-                numero_piso: parseInt(form.numero_piso),
-                id_torre: parseInt(form.id_torre)
-            }]);
+            await pisoService.create(payload);
         }
+
+        // Recarga la lista actualizada
+        const actualizado = await pisoService.getAll();
+        setPisos(actualizado);
         cerrarModal();
     };
 
-    const handleEliminar = (id) => {
+    const handleEliminar = async (id) => {
         if (window.confirm('¿Estás seguro de eliminar este piso?')) {
-            setPisos(pisos.filter(p => p.id !== id));
+            await pisoService.delete(id);
+            const actualizado = await pisoService.getAll();
+            setPisos(actualizado);
         }
     };
+
+    if (loading) {
+        return (
+            <div className="page-heading">
+                <div className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="page-heading">
@@ -103,7 +141,7 @@ const PisosPage = () => {
                                 onChange={e => setFiltroTorre(e.target.value)}
                             >
                                 <option value="">Todas las torres</option>
-                                {torresMock.map(t => (
+                                {torres.map(t => (
                                     <option key={t.id} value={t.id}>{t.nombre}</option>
                                 ))}
                             </select>
@@ -208,7 +246,7 @@ const PisosPage = () => {
                                         onChange={e => setForm({ ...form, id_torre: e.target.value })}
                                     >
                                         <option value="">Selecciona una torre</option>
-                                        {torresMock.map(t => (
+                                        {torres.map(t => (
                                             <option key={t.id} value={t.id}>{t.nombre}</option>
                                         ))}
                                     </select>
