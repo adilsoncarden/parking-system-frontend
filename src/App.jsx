@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 // ── shared ──────────────────────────────────────────
 import LoginForm from "./components/shared/LoginForm";
@@ -21,83 +22,83 @@ import CarritosPageWrapper from "./components/carritos/CarritosPageWrapper";
 // ── config ────────────────────────────────────────────
 import ConfiguracionPage from "./components/config/ConfiguracionPage";
 
-function App() {
-    const [paginaActual, setPaginaActual] = useState(() => {
-        return localStorage.getItem("paginaActual") ?? "login";
-    });
+// ═══════════════════════════════════════════════════════
+// Layout principal — envuelve todas las páginas privadas
+// ═══════════════════════════════════════════════════════
+function PrivateLayout({ onLogout, children }) {
+    const location = useLocation();
+    // El sidebar es key-driven: cada ruta nueva crea uno cerrado.
+    return (
+        <PrivateLayoutInner
+            key={location.pathname}
+            onLogout={onLogout}
+        >
+            {children}
+        </PrivateLayoutInner>
+    );
+}
 
-    // Estado del sidebar móvil (abierto/cerrado)
+function PrivateLayoutInner({ onLogout, children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-
-    useEffect(() => {
-        localStorage.setItem("paginaActual", paginaActual);
-    }, [paginaActual]);
-
-    // Cambiar de página cierra el sidebar en móvil
-    const cambiarPagina = (pagina) => {
-        setPaginaActual(pagina);
-        setSidebarOpen(false);
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem("paginaActual");
-        setPaginaActual("login");
-        setSidebarOpen(false);
-    };
 
     const toggleSidebar = (e) => {
         e.preventDefault();
         setSidebarOpen(prev => !prev);
     };
 
-    if (paginaActual !== "login") {
-        return (
-            <div id="app">
-                <Sidebar
-                    onLogout={handleLogout}
-                    setPagina={cambiarPagina}
-                    paginaActual={paginaActual}
-                    sidebarOpen={sidebarOpen}
+    return (
+        <div id="app">
+            <Sidebar
+                onLogout={onLogout}
+                sidebarOpen={sidebarOpen}
+            />
+
+            {sidebarOpen && (
+                <div
+                    onClick={() => setSidebarOpen(false)}
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        backgroundColor: "rgba(0,0,0,0.5)",
+                        zIndex: 900,
+                    }}
+                    className="d-xl-none"
                 />
+            )}
 
-                {/* Overlay oscuro en móvil cuando el sidebar está abierto */}
-                {sidebarOpen && (
-                    <div
-                        onClick={() => setSidebarOpen(false)}
-                        style={{
-                            position: "fixed",
-                            inset: 0,
-                            backgroundColor: "rgba(0,0,0,0.5)",
-                            zIndex: 900,
-                        }}
-                        className="d-xl-none"
-                    />
-                )}
-
-                <div id="main">
-                    <header className="mb-3">
-                        <a
-                            href="#"
-                            className="burger-btn d-block d-xl-none"
-                            onClick={toggleSidebar}
-                        >
-                            <i className="bi bi-justify fs-3"></i>
-                        </a>
-                    </header>
-                    <div className="page-content">
-                        {paginaActual === "dashboard"    && <Dashboard />}
-                        {paginaActual === "condominios"  && <CondominiosPage />}
-                        {paginaActual === "torres"       && <ModalTorres />}
-                        {paginaActual === "pisos"        && <PisosPage />}
-                        {paginaActual === "apartamentos" && <ApartamentosPage />}
-                        {paginaActual === "carritos"     && <CarritosPageWrapper />}
-                        {paginaActual === "config"       && <ConfiguracionPage />}
-                    </div>
+            <div id="main">
+                <header className="mb-3">
+                    <a
+                        href="#"
+                        className="burger-btn d-block d-xl-none"
+                        onClick={toggleSidebar}
+                    >
+                        <i className="bi bi-justify fs-3"></i>
+                    </a>
+                </header>
+                <div className="page-content">
+                    {children}
                 </div>
             </div>
-        );
-    }
+        </div>
+    );
+}
 
+// ═══════════════════════════════════════════════════════
+// Ruta protegida — bloquea acceso si no hay sesión
+// (Por ahora usa localStorage, más adelante usará JWT)
+// ═══════════════════════════════════════════════════════
+function ProtectedRoute({ isAuthenticated, children }) {
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
+    return children;
+}
+
+// ═══════════════════════════════════════════════════════
+// Página de Login
+// ═══════════════════════════════════════════════════════
+function LoginPage({ onLogin }) {
     return (
         <div className="login-container">
             <div
@@ -106,10 +107,146 @@ function App() {
             >
                 <div className="card-body">
                     <h3 className="text-center mb-4 fw-bold">CondoSaaS</h3>
-                    <LoginForm onLogin={() => setPaginaActual("dashboard")} />
+                    <LoginForm onLogin={onLogin} />
                 </div>
             </div>
         </div>
+    );
+}
+
+// ═══════════════════════════════════════════════════════
+// Componente raíz que vive dentro del Router
+// ═══════════════════════════════════════════════════════
+function AppContent() {
+    const [isAuthenticated, setIsAuthenticated] = useState(() => {
+        return localStorage.getItem("isAuthenticated") === "true";
+    });
+
+    const navigate = useNavigate();
+
+    // Sincroniza isAuthenticated con localStorage si cambia desde otra pestaña
+    useEffect(() => {
+        const handler = () => {
+            setIsAuthenticated(localStorage.getItem("isAuthenticated") === "true");
+        };
+        window.addEventListener("storage", handler);
+        return () => window.removeEventListener("storage", handler);
+    }, []);
+
+    const handleLogin = () => {
+        localStorage.setItem("isAuthenticated", "true");
+        setIsAuthenticated(true);
+        navigate("/dashboard");
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem("isAuthenticated");
+        setIsAuthenticated(false);
+        navigate("/login");
+    };
+
+    return (
+        <Routes>
+            {/* Ruta pública */}
+            <Route
+                path="/login"
+                element={
+                    isAuthenticated
+                        ? <Navigate to="/dashboard" replace />
+                        : <LoginPage onLogin={handleLogin} />
+                }
+            />
+
+            {/* Rutas protegidas */}
+            <Route
+                path="/dashboard"
+                element={
+                    <ProtectedRoute isAuthenticated={isAuthenticated}>
+                        <PrivateLayout onLogout={handleLogout}>
+                            <Dashboard />
+                        </PrivateLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/condominios"
+                element={
+                    <ProtectedRoute isAuthenticated={isAuthenticated}>
+                        <PrivateLayout onLogout={handleLogout}>
+                            <CondominiosPage />
+                        </PrivateLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/torres"
+                element={
+                    <ProtectedRoute isAuthenticated={isAuthenticated}>
+                        <PrivateLayout onLogout={handleLogout}>
+                            <ModalTorres />
+                        </PrivateLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/pisos"
+                element={
+                    <ProtectedRoute isAuthenticated={isAuthenticated}>
+                        <PrivateLayout onLogout={handleLogout}>
+                            <PisosPage />
+                        </PrivateLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/apartamentos"
+                element={
+                    <ProtectedRoute isAuthenticated={isAuthenticated}>
+                        <PrivateLayout onLogout={handleLogout}>
+                            <ApartamentosPage />
+                        </PrivateLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/carritos"
+                element={
+                    <ProtectedRoute isAuthenticated={isAuthenticated}>
+                        <PrivateLayout onLogout={handleLogout}>
+                            <CarritosPageWrapper />
+                        </PrivateLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/config"
+                element={
+                    <ProtectedRoute isAuthenticated={isAuthenticated}>
+                        <PrivateLayout onLogout={handleLogout}>
+                            <ConfiguracionPage />
+                        </PrivateLayout>
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* Redirección por defecto */}
+            <Route
+                path="/"
+                element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />}
+            />
+            <Route
+                path="*"
+                element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />}
+            />
+        </Routes>
+    );
+}
+
+function App() {
+    return (
+        <BrowserRouter>
+            <AppContent />
+        </BrowserRouter>
     );
 }
 
