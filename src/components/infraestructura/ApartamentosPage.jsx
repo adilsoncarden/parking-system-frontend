@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
-import { condominiosBase, torresMock, pisosMock, apartamentosMock as apartamentosMockData } from "../../data/condominiosData";
+import React, { useState, useEffect } from 'react';
+import { apartamentoService } from "../../services/apartamentoService";
+import { pisoService } from "../../services/pisoService";
+import { torreService } from "../../services/torreService";
+import { condominioService } from "../../services/condominioService";
 
 const ApartamentosPage = () => {
-    const [apartamentos, setApartamentos] = useState(apartamentosMockData);
+    const [apartamentos, setApartamentos] = useState([]);
+    const [pisos, setPisos] = useState([]);
+    const [torres, setTorres] = useState([]);
+    const [condominios, setCondominios] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const [filtroPiso, setFiltroPiso] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [modoEdicion, setModoEdicion] = useState(false);
@@ -10,11 +18,28 @@ const ApartamentosPage = () => {
     const [form, setForm] = useState({ numero_apartamento: '', id_piso: '' });
     const [error, setError] = useState('');
 
+    useEffect(() => {
+        const cargarDatos = async () => {
+            const [apartamentosData, pisosData, torresData, condosData] = await Promise.all([
+                apartamentoService.getAll(),
+                pisoService.getAll(),
+                torreService.getAll(),
+                condominioService.getAll(),
+            ]);
+            setApartamentos(apartamentosData);
+            setPisos(pisosData);
+            setTorres(torresData);
+            setCondominios(condosData);
+            setLoading(false);
+        };
+        cargarDatos();
+    }, []);
+
     const getPisoInfo = (id_piso) => {
-        const piso = pisosMock.find(p => p.id === id_piso);
+        const piso = pisos.find(p => p.id === id_piso);
         if (!piso) return { numero: '-', torre: '-', condominio: '-' };
-        const torre = torresMock.find(t => t.id === piso.id_torre);
-        const condo = torre ? condominiosBase.find(c => c.id === torre.id_condominio) : null;
+        const torre = torres.find(t => t.id === piso.id_torre);
+        const condo = torre ? condominios.find(c => c.id === torre.id_condominio) : null;
         return {
             numero: piso.numero_piso,
             torre: torre ? torre.nombre : '-',
@@ -46,33 +71,47 @@ const ApartamentosPage = () => {
         setError('');
     };
 
-    const handleGuardar = () => {
+    const handleGuardar = async () => {
         if (!form.numero_apartamento || !form.id_piso) {
             setError('Por favor completa todos los campos.');
             return;
         }
+
+        const payload = {
+            numero_apartamento: form.numero_apartamento,
+            id_piso: parseInt(form.id_piso),
+        };
+
         if (modoEdicion) {
-            setApartamentos(apartamentos.map(a =>
-                a.id === apartamentoSeleccionado.id
-                    ? { ...a, numero_apartamento: form.numero_apartamento, id_piso: parseInt(form.id_piso) }
-                    : a
-            ));
+            await apartamentoService.update(apartamentoSeleccionado.id, payload);
         } else {
-            const nuevoId = apartamentos.length > 0 ? Math.max(...apartamentos.map(a => a.id)) + 1 : 1;
-            setApartamentos([...apartamentos, {
-                id: nuevoId,
-                numero_apartamento: form.numero_apartamento,
-                id_piso: parseInt(form.id_piso)
-            }]);
+            await apartamentoService.create(payload);
         }
+
+        const actualizado = await apartamentoService.getAll();
+        setApartamentos(actualizado);
         cerrarModal();
     };
 
-    const handleEliminar = (id) => {
+    const handleEliminar = async (id) => {
         if (window.confirm('¿Estás seguro de eliminar este apartamento?')) {
-            setApartamentos(apartamentos.filter(a => a.id !== id));
+            await apartamentoService.delete(id);
+            const actualizado = await apartamentoService.getAll();
+            setApartamentos(actualizado);
         }
     };
+
+    if (loading) {
+        return (
+            <div className="page-heading">
+                <div className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="page-heading">
@@ -99,9 +138,9 @@ const ApartamentosPage = () => {
                                 onChange={e => setFiltroPiso(e.target.value)}
                             >
                                 <option value="">Todos los pisos</option>
-                                {pisosMock.map(p => (
+                                {pisos.map(p => (
                                     <option key={p.id} value={p.id}>
-                                        Piso {p.numero_piso} - {torresMock.find(t => t.id === p.id_torre)?.nombre}
+                                        Piso {p.numero_piso} - {torres.find(t => t.id === p.id_torre)?.nombre}
                                     </option>
                                 ))}
                             </select>
@@ -205,9 +244,9 @@ const ApartamentosPage = () => {
                                         onChange={e => setForm({ ...form, id_piso: e.target.value })}
                                     >
                                         <option value="">Selecciona el piso</option>
-                                        {pisosMock.map(p => (
+                                        {pisos.map(p => (
                                             <option key={p.id} value={p.id}>
-                                                Piso {p.numero_piso} ({torresMock.find(t => t.id === p.id_torre)?.nombre})
+                                                Piso {p.numero_piso} ({torres.find(t => t.id === p.id_torre)?.nombre})
                                             </option>
                                         ))}
                                     </select>
