@@ -8,6 +8,8 @@ import { AppProvider } from "./context/AppProvider.jsx";
 import "/public/assets/compiled/css/app.css";
 import "/public/assets/compiled/css/app-dark.css";
 import "/public/assets/compiled/css/iconly.css";
+import "./styles/responsive.css";
+
 
 ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>
