@@ -1,40 +1,44 @@
-import { fakeDelay } from "./_apiHelper";
+import api from "./api";
 
 // ═══════════════════════════════════════════════════════════
 // AUTH SERVICE
-// Hoy: valida contra usuarios hardcodeados.
-// El rol se determina automáticamente por el correo (no se pide al usuario)
-// Mañana: hará POST /api/auth/login y guardará el JWT
+// Conecta con el backend Spring Boot real.
+// Endpoint: POST http://localhost:8080/auth/login
 // ═══════════════════════════════════════════════════════════
-
-const USUARIOS_MOCK = [
-    { email: "admin@condominio.com",   password: "admin123",   rol: "admin"    },
-    { email: "portero@condominio.com", password: "portero123", rol: "porteria" },
-];
 
 export const authService = {
 
-    login: async ({ email, password }) => {
-        const usuario = USUARIOS_MOCK.find(
-            u => u.email === email && u.password === password
-        );
+    login: async ({ username, password }) => {
+        try {
+            const response = await api.post("/auth/login", { username, password });
+            const token = response.data.token;
 
-        if (!usuario) {
-            return fakeDelay({ ok: false, error: "Correo o contraseña incorrectos" });
+            if (!token) {
+                return { ok: false, error: "El servidor no devolvió un token" };
+            }
+
+            // Guardamos token + sesión activa
+            localStorage.setItem("token", token);
+            localStorage.setItem("user", JSON.stringify({ username }));
+            localStorage.setItem("isAuthenticated", "true");
+
+            return { ok: true, user: { username }, token };
+
+        } catch (error) {
+            // 401: credenciales incorrectas
+            if (error.response && error.response.status === 401) {
+                return { ok: false, error: "Usuario o contraseña incorrectos" };
+            }
+            // 403: usuario no tiene permisos
+            if (error.response && error.response.status === 403) {
+                return { ok: false, error: "No tienes permisos para acceder" };
+            }
+            // Backend caído / sin red
+            if (error.code === "ERR_NETWORK") {
+                return { ok: false, error: "No se puede conectar al servidor. Verifica que el backend esté corriendo." };
+            }
+            return { ok: false, error: "Error al iniciar sesión. Intenta de nuevo." };
         }
-
-        // Simula token JWT (luego lo dará el backend)
-        const fakeToken = btoa(`${email}:${usuario.rol}:${Date.now()}`);
-
-        localStorage.setItem("token", fakeToken);
-        localStorage.setItem("user", JSON.stringify({ email, rol: usuario.rol }));
-        localStorage.setItem("isAuthenticated", "true");
-
-        return fakeDelay({
-            ok: true,
-            user: { email, rol: usuario.rol },
-            token: fakeToken,
-        });
     },
 
     logout: () => {
@@ -50,5 +54,5 @@ export const authService = {
         return raw ? JSON.parse(raw) : null;
     },
 
-    isAuthenticated: () => localStorage.getItem("isAuthenticated") === "true",
+    isAuthenticated: () => !!localStorage.getItem("token"),
 };

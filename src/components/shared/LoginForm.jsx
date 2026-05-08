@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { authService } from "../../services/authService";
 
 const LoginForm = ({ onLogin }) => {
-    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -12,13 +12,13 @@ const LoginForm = ({ onLogin }) => {
         e.preventDefault();
         setError('');
 
-        if (!email || !password) {
+        if (!username || !password) {
             setError('Por favor complete todos los campos.');
             return;
         }
 
         setLoading(true);
-        const result = await authService.login({ email, password });
+        const result = await authService.login({ username, password });
         setLoading(false);
 
         if (!result.ok) {
@@ -26,25 +26,25 @@ const LoginForm = ({ onLogin }) => {
             return;
         }
 
-        // Avisa al App.jsx que el login fue exitoso
+        // Login exitoso, avisar al App.jsx
         onLogin(result.user);
     };
 
     return (
         <form onSubmit={handleSubmit}>
-            {/* Input de Correo */}
+            {/* Input de Usuario */}
             <div className="mb-3">
-                <label className="form-label">Correo Electrónico</label>
+                <label className="form-label">Usuario</label>
                 <div className="input-group">
                     <span className="input-group-text">
-                        <i className="bi bi-envelope"></i>
+                        <i className="bi bi-person"></i>
                     </span>
                     <input
-                        type="email"
+                        type="text"
                         className="form-control"
-                        placeholder="ejemplo@correo.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="admin"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
                         disabled={loading}
                     />
                 </div>
