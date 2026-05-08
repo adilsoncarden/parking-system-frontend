@@ -1,108 +1,107 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { condominiosBase } from "../../data/condominiosData";
-import CondominioCard from "./CondominioCard";
-import CondominioAgregarCard from "./CondominioAgregarCard";
-
-const carritosMock = [
-    { id: 1, nombre: 'Carrito #1' },
-    { id: 2, nombre: 'Carrito #2' },
-    { id: 3, nombre: 'Carrito #3' },
-    { id: 4, nombre: 'Carrito #4' },
-];
+import React, { useState, useEffect } from 'react';
+import CondominioCard from './CondominioCard';
+import CondominioAgregarCard from './CondominioAgregarCard';
+import CondominioModal from './CondominioModal';
+import { condominioService } from "../../services/condominioService";
 
 const CondominiosPage = () => {
-    const [prestamos, setPrestamos] = useState(() => {
-        try {
-            const saved = localStorage.getItem("prestamos");
-            return saved ? JSON.parse(saved) : [];
-        } catch {
-            return [];
-        }
-    });
+    const [condominios, setCondominios] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [condominioEditar, setCondominioEditar] = useState(null);
+    const [prestamosActivos, setPrestamosActivos] = useState([]);
 
     useEffect(() => {
-        const handleUpdate = () => {
-            try {
-                const saved = localStorage.getItem("prestamos");
-                setPrestamos(saved ? JSON.parse(saved) : []);
-            } catch {
-                setPrestamos([]);
-            }
+        const cargar = async () => {
+            const data = await condominioService.getAll();
+            setCondominios(data);
+            setLoading(false);
         };
-        window.addEventListener("prestamos-updated", handleUpdate);
-        return () => window.removeEventListener("prestamos-updated", handleUpdate);
+        cargar();
     }, []);
 
-    const condominiosConStats = useMemo(() => {
-        return condominiosBase.map(condo => {
-            const carritosDelCondo = carritosMock.filter(c =>
-                condo.carritoIds.includes(c.id)
-            );
-            const activos = carritosDelCondo.filter(c =>
-                prestamos.some(p => p.id_carrito === c.id && p.estado === "activo")
-            ).length;
-            const enMantenimiento = carritosDelCondo.filter(c =>
-                prestamos.some(p => p.id_carrito === c.id && p.estado === "mantenimiento")
-            ).length;
-            return {
-                ...condo,
-                carritosActivos: activos,
-                carritosMantenimiento: enMantenimiento,
-            };
-        });
-    }, [prestamos]);
+    // Sincroniza préstamos activos con localStorage
+    useEffect(() => {
+        const actualizarPrestamos = () => {
+            const stored = JSON.parse(localStorage.getItem("prestamos") || "[]");
+            const activos = stored.filter(p => p.estado === "activo");
+            setPrestamosActivos(activos);
+        };
+        actualizarPrestamos();
+        window.addEventListener("prestamos-updated", actualizarPrestamos);
+        return () => window.removeEventListener("prestamos-updated", actualizarPrestamos);
+    }, []);
+
+    const handleAgregar = () => {
+        setCondominioEditar(null);
+        setShowModal(true);
+    };
+
+    const handleEditar = (condominio) => {
+        setCondominioEditar(condominio);
+        setShowModal(true);
+    };
+
+    const handleGuardar = async (datos) => {
+        if (condominioEditar) {
+            await condominioService.update(condominioEditar.id, datos);
+        } else {
+            await condominioService.create(datos);
+        }
+        const actualizado = await condominioService.getAll();
+        setCondominios(actualizado);
+        setShowModal(false);
+    };
+
+    if (loading) {
+        return (
+            <div className="page-heading">
+                <div className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="page-heading">
-            {/* Header */}
             <div className="page-title">
-                <div className="row align-items-center mb-3">
+                <div className="row">
                     <div className="col-12 col-md-6 order-md-1 order-last">
-                        <h3 className="mb-1">Condominios</h3>
-                        <p className="text-subtitle text-muted mb-0">
+                        <h3>Condominios</h3>
+                        <p className="text-subtitle text-muted">
                             Administra tu portafolio de propiedades y monitorea la logística activa.
                         </p>
-                    </div>
-                    <div className="col-12 col-md-6 d-flex justify-content-md-end gap-2 mt-2 mt-md-0 flex-wrap">
-                        <button
-                            className="btn btn-light d-flex align-items-center gap-2"
-                            style={{ borderRadius: "10px", fontSize: "12px", fontWeight: 700 }}
-                        >
-                            <i className="bi bi-funnel text-primary"></i>
-                            <span className="text-uppercase" style={{ letterSpacing: "1px" }}>
-                                Filtrar Estado
-                            </span>
-                        </button>
-                        <button
-                            className="btn btn-light d-flex align-items-center gap-2"
-                            style={{ borderRadius: "10px", fontSize: "12px", fontWeight: 700 }}
-                        >
-                            <i className="bi bi-calendar text-primary"></i>
-                            <span className="text-uppercase" style={{ letterSpacing: "1px" }}>
-                                Últimos 30 días
-                            </span>
-                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* Grid responsivo */}
             <section className="section">
-                <div className="row g-3">
-                    {condominiosConStats.map(condo => (
-                        <div key={condo.id} className="col-12 col-md-6 col-xxl-4">
+                <div className="row">
+                    {condominios.map((condo) => (
+                        <div className="col-12 col-md-6 col-lg-4 mb-4" key={condo.id}>
                             <CondominioCard
                                 condominio={condo}
-                                carritosActivos={condo.carritosActivos}
-                                carritosMantenimiento={condo.carritosMantenimiento}
+                                prestamosActivos={prestamosActivos}
+                                onVerDetalles={() => handleEditar(condo)}
                             />
                         </div>
                     ))}
-                    <div className="col-12 col-md-6 col-xxl-4">
-                        <CondominioAgregarCard />
+
+                    <div className="col-12 col-md-6 col-lg-4 mb-4">
+                        <CondominioAgregarCard onAgregar={handleAgregar} />
                     </div>
                 </div>
             </section>
+
+            <CondominioModal
+                show={showModal}
+                onClose={() => setShowModal(false)}
+                onSave={handleGuardar}
+                condominioEditar={condominioEditar}
+            />
         </div>
     );
 };

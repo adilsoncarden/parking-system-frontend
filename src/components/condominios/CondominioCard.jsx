@@ -1,7 +1,21 @@
 import React, { useState } from "react";
 
-const CondominioCard = ({ condominio, carritosActivos, carritosMantenimiento }) => {
+// Configuración visual de cada tipo de condominio
+const TIPOS_CONFIG = {
+    residencial: { label: "Residencial", color: "#4e6ef2" },
+    premium:     { label: "Premium",     color: "#28a745" },
+    platinium:   { label: "Platinium",   color: "#ffc107" },
+};
+
+const CondominioCard = ({ condominio, prestamosActivos = [], onVerDetalles }) => {
     const [imgError, setImgError] = useState(false);
+
+    // Calcula carritos activos para este condominio (a futuro vendrá del backend)
+    const carritosActivos = prestamosActivos.length;
+    const carritosMantenimiento = 0;
+
+    // Configuración del badge según el tipo
+    const tipoConfig = TIPOS_CONFIG[condominio.tipo] || TIPOS_CONFIG.residencial;
 
     return (
         <div
@@ -26,7 +40,7 @@ const CondominioCard = ({ condominio, carritosActivos, carritosMantenimiento }) 
                 position: "relative",
                 borderRadius: "16px 16px 0 0"
             }}>
-                {!imgError ? (
+                {condominio.imagen && !imgError ? (
                     <img
                         src={condominio.imagen}
                         alt={condominio.nombre}
@@ -47,12 +61,12 @@ const CondominioCard = ({ condominio, carritosActivos, carritosMantenimiento }) 
                     position: "absolute", inset: 0,
                     background: "linear-gradient(to top, rgba(0,0,0,0.5), transparent)"
                 }} />
-                {/* Badge */}
+                {/* Badge según tipo */}
                 <span
                     className="position-absolute text-white fw-bold"
                     style={{
                         bottom: "12px", left: "14px",
-                        background: condominio.badgeColor,
+                        background: tipoConfig.color,
                         fontSize: "10px",
                         letterSpacing: "1px",
                         textTransform: "uppercase",
@@ -60,7 +74,7 @@ const CondominioCard = ({ condominio, carritosActivos, carritosMantenimiento }) 
                         borderRadius: "999px",
                     }}
                 >
-                    {condominio.badge}
+                    {tipoConfig.label}
                 </span>
             </div>
 
@@ -111,6 +125,7 @@ const CondominioCard = ({ condominio, carritosActivos, carritosMantenimiento }) 
                 <button
                     className="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2"
                     style={{ borderRadius: "10px", fontWeight: 700, fontSize: "13px" }}
+                    onClick={() => onVerDetalles && onVerDetalles()}
                 >
                     Ver Detalles
                     <i className="bi bi-arrow-right"></i>
