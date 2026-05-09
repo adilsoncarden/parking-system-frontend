@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-lea
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-// Fix del icono de marker (Leaflet por defecto no carga bien con webpack/vite)
+// Fix del icono de marker
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -11,7 +11,7 @@ L.Icon.Default.mergeOptions({
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// Componente que centra el mapa cuando cambian las coordenadas
+// Centra el mapa cuando cambian las coordenadas
 function RecenterMap({ position }) {
     const map = useMap();
     useEffect(() => {
@@ -22,7 +22,7 @@ function RecenterMap({ position }) {
     return null;
 }
 
-// Componente que escucha clicks en el mapa
+// Escucha clicks en el mapa
 function MapClickHandler({ onMapClick }) {
     useMapEvents({
         click(e) {
@@ -32,14 +32,13 @@ function MapClickHandler({ onMapClick }) {
     return null;
 }
 
-const MapaUbicacion = ({ direccion, onUbicacionChange, latInicial, lngInicial }) => {
-    // Lima por defecto si no hay ubicación inicial
+const MapaUbicacion = ({ direccion, onUbicacionChange, latInicial, lngInicial, triggerBuscar }) => {
     const [position, setPosition] = useState(
         latInicial && lngInicial ? [latInicial, lngInicial] : [-12.0464, -77.0428]
     );
     const [buscando, setBuscando] = useState(false);
 
-    // Buscar dirección cuando el usuario presiona el botón
+    // Buscar dirección (función reutilizable)
     const buscarDireccion = async () => {
         if (!direccion || direccion.trim() === "") return;
         setBuscando(true);
@@ -64,7 +63,15 @@ const MapaUbicacion = ({ direccion, onUbicacionChange, latInicial, lngInicial })
         }
     };
 
-    // Cuando el usuario hace click en el mapa, hacemos geocoding inverso
+    // Se dispara cuando el padre incrementa triggerBuscar (botón check verde)
+    useEffect(() => {
+        if (triggerBuscar && triggerBuscar > 0) {
+            buscarDireccion();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [triggerBuscar]);
+
+    // Click en el mapa: geocoding inverso
     const handleMapClick = async (lat, lng) => {
         setPosition([lat, lng]);
         try {
@@ -82,7 +89,6 @@ const MapaUbicacion = ({ direccion, onUbicacionChange, latInicial, lngInicial })
 
     return (
         <div>
-            {/* Botón para buscar la dirección escrita */}
             <button
                 type="button"
                 className="btn btn-sm btn-outline-primary mb-2 w-100"
@@ -102,7 +108,6 @@ const MapaUbicacion = ({ direccion, onUbicacionChange, latInicial, lngInicial })
                 )}
             </button>
 
-            {/* Mini-mapa */}
             <div style={{ height: "250px", borderRadius: "8px", overflow: "hidden" }}>
                 <MapContainer
                     center={position}

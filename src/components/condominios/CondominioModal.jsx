@@ -15,8 +15,6 @@ const FORM_VACIO = {
 
 // ═══════════════════════════════════════════════════════════
 // Wrapper externo: decide si mostrar el modal y qué key usar
-// El key obliga a React a recrear el componente cuando cambia
-// el item a editar (sin necesidad de useEffect)
 // ═══════════════════════════════════════════════════════════
 const CondominioModal = ({ show, onClose, onSave, condominioEditar }) => {
     if (!show) return null;
@@ -37,7 +35,6 @@ const CondominioModal = ({ show, onClose, onSave, condominioEditar }) => {
 const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
     const modoEdicion = !!condominioEditar;
 
-    // Estado inicial calculado SIN useEffect
     const [form, setForm] = useState(() => {
         if (condominioEditar) {
             return {
@@ -54,6 +51,9 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
     const [direccionConfirmada, setDireccionConfirmada] = useState(!!condominioEditar?.direccion);
     const [error, setError] = useState("");
 
+    // Contador que dispara la búsqueda en el mapa cuando se incrementa
+    const [triggerBuscar, setTriggerBuscar] = useState(0);
+
     const handleUbicacionChange = ({ lat, lng, direccionFormateada }) => {
         setForm((prev) => ({
             ...prev,
@@ -69,6 +69,8 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
             setError("Escribe primero una dirección o selecciónala en el mapa.");
             return;
         }
+        // Dispara la búsqueda en el mapa
+        setTriggerBuscar((prev) => prev + 1);
         setDireccionConfirmada(true);
         setError("");
     };
@@ -120,7 +122,7 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
                                 />
                             </div>
 
-                            {/* Dirección con botón check */}
+                            {/* Dirección con botón check (que ahora busca en el mapa) */}
                             <div className="col-12 col-md-6">
                                 <label htmlFor="condo-direccion" className="form-label fw-bold small text-uppercase">
                                     Dirección
@@ -139,12 +141,18 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
                                             setForm({ ...form, direccion: e.target.value });
                                             setDireccionConfirmada(false);
                                         }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                handleConfirmarDireccion();
+                                            }
+                                        }}
                                     />
                                     <button
                                         type="button"
                                         className={`btn ${direccionConfirmada ? "btn-success" : "btn-outline-success"}`}
                                         onClick={handleConfirmarDireccion}
-                                        title="Confirmar dirección"
+                                        title="Confirmar y buscar en el mapa"
                                     >
                                         <i className="bi bi-check-lg"></i>
                                     </button>
@@ -161,6 +169,7 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
                                     onUbicacionChange={handleUbicacionChange}
                                     latInicial={form.lat}
                                     lngInicial={form.lng}
+                                    triggerBuscar={triggerBuscar}
                                 />
                             </div>
 
