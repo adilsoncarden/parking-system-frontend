@@ -1,32 +1,65 @@
-import { condominiosBase } from "../data/condominiosData";
-import { fakeDelay, generateId } from "./_apiHelper";
-
-let _cache = [...condominiosBase];
+import api from "./api";
 
 // ═══════════════════════════════════════════════════════════
 // CONDOMINIO SERVICE
-// Hoy: devuelve datos mock
-// Mañana: cada método hará fetch('/api/condominios')
+// Conecta con el backend Spring Boot real.
+// Endpoints: /admin/condominios
+// El JWT se agrega automáticamente vía interceptor en api.js
 // ═══════════════════════════════════════════════════════════
 
+// El backend usa "latitud/longitud" pero el frontend usa "lat/lng".
+// Estos helpers traducen entre los dos formatos.
+
+const fromBackend = (c) => ({
+    id:        c.id,
+    nombre:    c.nombre,
+    direccion: c.direccion,
+    tipo:      c.tipo,
+    imagen:    c.imagen,
+    lat:       c.latitud,
+    lng:       c.longitud,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+});
+
+const toBackend = (c) => ({
+    nombre:    c.nombre,
+    direccion: c.direccion,
+    tipo:      c.tipo,
+    imagen:    c.imagen,
+    latitud:   c.lat,
+    longitud:  c.lng,
+});
+
 export const condominioService = {
-    getAll: () => fakeDelay([..._cache]),
 
-    getById: (id) => fakeDelay(_cache.find(c => c.id === id) || null),
-
-    create: (data) => {
-        const nuevo = { ...data, id: generateId(_cache) };
-        _cache = [..._cache, nuevo];
-        return fakeDelay(nuevo);
+    // GET /admin/condominios
+    getAll: async () => {
+        const res = await api.get("/admin/condominios");
+        return res.data.map(fromBackend);
     },
 
-    update: (id, data) => {
-        _cache = _cache.map(c => c.id === id ? { ...c, ...data } : c);
-        return fakeDelay(_cache.find(c => c.id === id));
+    // GET /admin/condominios/{id}
+    getById: async (id) => {
+        const res = await api.get(`/admin/condominios/${id}`);
+        return fromBackend(res.data);
     },
 
-    delete: (id) => {
-        _cache = _cache.filter(c => c.id !== id);
-        return fakeDelay({ success: true, id });
+    // POST /admin/condominios
+    create: async (datos) => {
+        const res = await api.post("/admin/condominios", toBackend(datos));
+        return fromBackend(res.data);
+    },
+
+    // PUT /admin/condominios/{id}
+    update: async (id, datos) => {
+        const res = await api.put(`/admin/condominios/${id}`, toBackend(datos));
+        return fromBackend(res.data);
+    },
+
+    // DELETE /admin/condominios/{id}
+    delete: async (id) => {
+        await api.delete(`/admin/condominios/${id}`);
+        return true;
     },
 };
