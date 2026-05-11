@@ -35,12 +35,12 @@ const ModalTorres = () => {
     const [search, setSearch] = useState("");
     const [drawer, setDrawer] = useState({ open: false, edit: false });
     const [torres, setTorres] = useState([
-        { id: 1, nombre: "Torre A", estado: "Operativa", pisos: 15, apartamentos: 60, condominio: "Residencial Las Palmas" },
-        { id: 2, nombre: "Torre B", estado: "Mantenimiento", pisos: 12, apartamentos: 48, condominio: "Residencial Las Palmas" },
-        { id: 3, nombre: "Torre Norte", estado: "Operativa", pisos: 20, apartamentos: 80, condominio: "Condominio El Bosque" },
-        { id: 4, nombre: "Torre Sur", estado: "Inactiva", pisos: 10, apartamentos: 40, condominio: "Condominio El Bosque" },
-        { id: 5, nombre: "Torre C", estado: "Operativa", pisos: 18, apartamentos: 72, condominio: "Residencial Las Palmas" },
-        { id: 6, nombre: "Torre Este", estado: "Operativa", pisos: 22, apartamentos: 88, condominio: "Condominio El Bosque" }
+        { id: 1, nombre: "Torre A", pisos: 15, apartamentos: 60, condominio: "Residencial Las Palmas" },
+        { id: 2, nombre: "Torre B", pisos: 12, apartamentos: 48, condominio: "Residencial Las Palmas" },
+        { id: 3, nombre: "Torre Norte", pisos: 20, apartamentos: 80, condominio: "Condominio El Bosque" },
+        { id: 4, nombre: "Torre Sur", pisos: 10, apartamentos: 40, condominio: "Condominio El Bosque" },
+        { id: 5, nombre: "Torre C", pisos: 18, apartamentos: 72, condominio: "Residencial Las Palmas" },
+        { id: 6, nombre: "Torre Este", pisos: 22, apartamentos: 88, condominio: "Condominio El Bosque" }
     ]);
     const [form, setForm] = useState({ id: null, nombre: "", condominio: "Residencial Las Palmas", pisos: "", apartamentos: "", estado: "Operativa" });
 
