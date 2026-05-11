@@ -34,21 +34,7 @@ const TorreModal = ({ drawer, form, setForm, setDrawer, save, condominios, onDel
                                 </div>
                             ))}
                         </div>
-                        <div className="mb-4">
-                            <label className="small fw-bold text-muted">ESTADO</label>
-                            <div className="d-flex gap-2 mt-1">
-                                {["Operativa", "Mantenimiento", "Inactiva"].map(s => (
-                                    <button 
-                                        type="button" 
-                                        key={s} 
-                                        className={`btn btn-sm rounded-pill border-theme flex-grow-1 ${form.estado === s ? 'btn-brand' : 'text-muted'}`} 
-                                        onClick={() => setForm({ ...form, estado: s })}
-                                    >
-                                        {s}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        
                         <div className="mt-auto d-grid gap-2">
                             <button className="btn btn-brand py-3">{drawer.edit ? 'Actualizar' : 'Guardar'}</button>
                             {drawer.edit && (
