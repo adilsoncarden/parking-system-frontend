@@ -1,29 +1,62 @@
-import { torresMock } from "../data/condominiosData";
-import { fakeDelay, generateId } from "./_apiHelper";
+import api from "./api";
 
-let _cache = [...torresMock];
+// ═══════════════════════════════════════════════════════════
+// TORRE SERVICE
+// Conecta con el backend Spring Boot real.
+// Endpoints: /admin/torres
+// ═══════════════════════════════════════════════════════════
+
+const fromBackend = (t) => ({
+    id: t.idTorres,
+    nombre: t.Nombre, // El backend usa Nombre (con N mayúscula)
+    pisos: t.cantidadPisos,
+    apartamentos: t.cantidadApartametos, // Nota: el backend tiene el typo "apartametos"
+    id_condominio: t.condominio ? t.condominio.id : null,
+    createdAt: t.createdAt,
+});
+
+const toBackend = (t) => ({
+    Nombre: t.nombre,
+    cantidadPisos: parseInt(t.pisos),
+    cantidadApartametos: parseInt(t.apartamentos),
+    condominio: { id: t.id_condominio }
+});
 
 export const torreService = {
-    getAll: () => fakeDelay([..._cache]),
 
-    getByCondominio: (id_condominio) =>
-        fakeDelay(_cache.filter(t => t.id_condominio === id_condominio)),
-
-    getById: (id) => fakeDelay(_cache.find(t => t.id === id) || null),
-
-    create: (data) => {
-        const nuevo = { ...data, id: generateId(_cache) };
-        _cache = [..._cache, nuevo];
-        return fakeDelay(nuevo);
+    // GET /admin/torres
+    getAll: async () => {
+        const res = await api.get("/admin/torres");
+        return Array.isArray(res.data) ? res.data.map(fromBackend) : [];
     },
 
-    update: (id, data) => {
-        _cache = _cache.map(t => t.id === id ? { ...t, ...data } : t);
-        return fakeDelay(_cache.find(t => t.id === id));
+    // GET /admin/torres/condominio/{id}
+    getByCondominio: async (id_condominio) => {
+        const res = await api.get(`/admin/torres/condominio/${id_condominio}`);
+        return Array.isArray(res.data) ? res.data.map(fromBackend) : [];
     },
 
-    delete: (id) => {
-        _cache = _cache.filter(t => t.id !== id);
-        return fakeDelay({ success: true, id });
+    // GET /admin/torres/{id}
+    getById: async (id) => {
+        const res = await api.get(`/admin/torres/${id}`);
+        return fromBackend(res.data);
+    },
+
+    // POST /admin/torres
+    create: async (datos) => {
+        const res = await api.post("/admin/torres", toBackend(datos));
+        return fromBackend(res.data);
+    },
+
+    // PUT /admin/torres/{id}
+    update: async (id, datos) => {
+        const res = await api.put(`/admin/torres/${id}`, toBackend(datos));
+        return fromBackend(res.data);
+    },
+
+    // DELETE /admin/torres/{id}
+    delete: async (id) => {
+        await api.delete(`/admin/torres/${id}`);
+        return true;
     },
 };
