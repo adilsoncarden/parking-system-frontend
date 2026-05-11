@@ -13,7 +13,7 @@ import Dashboard from "./components/shared/Dashboard";
 import CondominiosPage from "./components/condominios/CondominiosPage";
 
 // ── torres ───────────────────────────────────────────
-import ModalTorres from "./components/torres/ModalTorres";
+import TorresPage from "./components/torres/TorresPage";
 
 // ── infraestructura ───────────────────────────────────
 import PisosPage        from "./components/infraestructura/PisosPage";
@@ -167,7 +167,7 @@ function AppContent() {
             }/>
             <Route path="/torres" element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <PrivateLayout onLogout={handleLogout}><ModalTorres /></PrivateLayout>
+                    <PrivateLayout onLogout={handleLogout}><TorresPage /></PrivateLayout>
                 </ProtectedRoute>
             }/>
             <Route path="/pisos" element={

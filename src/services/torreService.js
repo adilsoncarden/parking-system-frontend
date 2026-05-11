@@ -1,29 +1,71 @@
-import { torresMock } from "../data/condominiosData";
-import { fakeDelay, generateId } from "./_apiHelper";
+import api from "./api";
 
-let _cache = [...torresMock];
+// ═══════════════════════════════════════════════════════════
+// TORRE SERVICE
+// Conecta con el backend Spring Boot real.
+// Endpoints: /admin/torres
+// ═══════════════════════════════════════════════════════════
+
+// Mapeo de lo que recibimos del servidor (Entity) a lo que usa el Frontend
+const fromBackend = (t) => ({
+    id: t.idTorres,
+    nombre: t.Nombre || t.nombre,
+    pisos: t.cantidadPisos || t.pisos,
+    apartamentos: t.cantidadApartametos || t.aptos,
+    id_condominio: t.condominio ? t.condominio.id : t.idCondominio,
+    createdAt: t.createdAt,
+});
+
+// Mapeo de lo que enviamos al servidor (TorreRequest DTO)
+const toBackend = (t) => ({
+    nombre: t.nombre,
+    idCondominio: parseInt(t.id_condominio),
+    pisos: parseInt(t.pisos),
+    aptos: parseInt(t.apartamentos)
+});
+
+// Configuración de headers para incluir el Token JWT de forma explícita
+const getAuthConfig = () => ({
+    headers: {
+        'Authorization': `Bearer ${localStorage.getItem("token")}`
+    }
+});
 
 export const torreService = {
-    getAll: () => fakeDelay([..._cache]),
 
-    getByCondominio: (id_condominio) =>
-        fakeDelay(_cache.filter(t => t.id_condominio === id_condominio)),
-
-    getById: (id) => fakeDelay(_cache.find(t => t.id === id) || null),
-
-    create: (data) => {
-        const nuevo = { ...data, id: generateId(_cache) };
-        _cache = [..._cache, nuevo];
-        return fakeDelay(nuevo);
+    // GET /admin/torres
+    getAll: async () => {
+        const res = await api.get("/admin/torres", getAuthConfig());
+        return Array.isArray(res.data) ? res.data.map(fromBackend) : [];
     },
 
-    update: (id, data) => {
-        _cache = _cache.map(t => t.id === id ? { ...t, ...data } : t);
-        return fakeDelay(_cache.find(t => t.id === id));
+    // GET /admin/torres/condominio/{id}
+    getByCondominio: async (id_condominio) => {
+        const res = await api.get(`/admin/torres/condominio/${id_condominio}`, getAuthConfig());
+        return Array.isArray(res.data) ? res.data.map(fromBackend) : [];
     },
 
-    delete: (id) => {
-        _cache = _cache.filter(t => t.id !== id);
-        return fakeDelay({ success: true, id });
+    // GET /admin/torres/{id}
+    getById: async (id) => {
+        const res = await api.get(`/admin/torres/${id}`, getAuthConfig());
+        return fromBackend(res.data);
+    },
+
+    // POST /admin/torres
+    create: async (datos) => {
+        const res = await api.post("/admin/torres", toBackend(datos), getAuthConfig());
+        return fromBackend(res.data);
+    },
+
+    // PUT /admin/torres/{id}
+    update: async (id, datos) => {
+        const res = await api.put(`/admin/torres/${id}`, toBackend(datos), getAuthConfig());
+        return fromBackend(res.data);
+    },
+
+    // DELETE /admin/torres/{id}
+    delete: async (id) => {
+        await api.delete(`/admin/torres/${id}`, getAuthConfig());
+        return true;
     },
 };
