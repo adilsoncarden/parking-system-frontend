@@ -10,8 +10,6 @@ import api from "./api";
 const fromBackend = (t) => ({
     id: t.idTorres,
     nombre: t.Nombre || t.nombre,
-    pisos: t.cantidadPisos || t.pisos,
-    apartamentos: t.cantidadApartametos || t.aptos,
     id_condominio: t.condominio ? t.condominio.id : t.idCondominio,
     createdAt: t.createdAt,
 });
@@ -20,8 +18,6 @@ const fromBackend = (t) => ({
 const toBackend = (t) => ({
     nombre: t.nombre,
     idCondominio: parseInt(t.id_condominio),
-    pisos: parseInt(t.pisos),
-    aptos: parseInt(t.apartamentos)
 });
 
 // Configuración de headers para incluir el Token JWT de forma explícita

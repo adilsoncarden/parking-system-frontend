@@ -26,14 +26,6 @@ const TorreModal = ({ drawer, form, setForm, setDrawer, save, condominios, onDel
                                 {condominios.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                             </select>
                         </div>
-                        <div className="row g-3 mb-3">
-                            {[["Pisos", "pisos"], ["Aptos", "apartamentos"]].map(([l, k]) => (
-                                <div className="col-6" key={l}>
-                                    <label className="small fw-bold text-muted">{l.toUpperCase()}</label>
-                                    <input type="number" className="form-control info-box bg-transparent" value={form[k]} onChange={e => setForm({ ...form, [k]: e.target.value })} required />
-                                </div>
-                            ))}
-                        </div>
                         
                         <div className="mt-auto d-grid gap-2">
                             <button className="btn btn-brand py-3">{drawer.edit ? 'Actualizar' : 'Guardar'}</button>
