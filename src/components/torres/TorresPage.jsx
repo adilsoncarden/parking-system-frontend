@@ -5,19 +5,7 @@ import TorreModal from "./TorreModal";
 import { torreService } from "../../services/torreService";
 import { condominioService } from "../../services/condominioService";
 
-const StatCard = ({ title, value, icon, color }) => (
-    <div className="card border-0 shadow-sm torre-card p-3 h-100">
-        <div className="d-flex align-items-center">
-            <div className={`rounded-circle bg-${color} bg-opacity-10 p-3 me-3 text-${color}`}>
-                <i className={`bi ${icon} fs-4`}></i>
-            </div>
-            <div>
-                <small className="text-muted fw-bold text-uppercase ls-1">{title}</small>
-                <h4 className="fw-bold mb-0">{value}</h4>
-            </div>
-        </div>
-    </div>
-);
+// No StatCard used in this view anymore
 
 const TorresPage = () => {
     const [loading, setLoading] = useState(true);
@@ -25,7 +13,8 @@ const TorresPage = () => {
     const [drawer, setDrawer] = useState({ open: false, edit: false });
     const [torres, setTorres] = useState([]);
     const [condominios, setCondominios] = useState([]);
-    const [form, setForm] = useState({ id: null, nombre: "", id_condominio: "", pisos: "", apartamentos: "" });
+    const [selectedCondoId, setSelectedCondoId] = useState(null);
+    const [form, setForm] = useState({ id: null, nombre: "", id_condominio: "" });
 
     useEffect(() => {
         const load = async () => {
@@ -46,25 +35,26 @@ const TorresPage = () => {
         return torres.filter(t => {
             const condo = condominios.find(c => c.id === t.id_condominio);
             const condoName = condo ? condo.nombre : "";
-            return (t.nombre + condoName).toLowerCase().includes(search.toLowerCase());
+            return t.nombre.toLowerCase().includes(search.toLowerCase()) || 
+                   condoName.toLowerCase().includes(search.toLowerCase());
         });
     }, [torres, search, condominios]);
 
     const grouped = useMemo(() => {
         const res = {};
         filtered.forEach(t => {
-            (res[t.id_condominio] = res[t.id_condominio] || []).push(t);
+            if (selectedCondoId === null || t.id_condominio === selectedCondoId) {
+                (res[t.id_condominio] = res[t.id_condominio] || []).push(t);
+            }
         });
         return res;
-    }, [filtered]);
+    }, [filtered, selectedCondoId]);
 
     const handleAdd = (condoId = null) => {
         setForm({
             id: null,
             nombre: "",
-            id_condominio: condoId || (condominios[0]?.id || ""),
-            pisos: "",
-            apartamentos: ""
+            id_condominio: condoId || (condominios[0]?.id || "")
         });
         setDrawer({ open: true, edit: false });
     };
@@ -90,16 +80,67 @@ const TorresPage = () => {
 
     return (
         <div className="container-fluid py-4 torre-container">
-            <div className="row g-3 mb-4">
-                {[["Total Torres", torres.length, "bi-buildings", "primary"], ["Apartamentos", torres.reduce((a, t) => a + +(t.apartamentos || 0), 0), "bi-house-fill", "warning"]].map(([t, v, i, c]) => (
-                    <div className="col-md-6" key={t}><StatCard title={t} value={v} icon={i} color={c} /></div>
-                ))}
+            <div className="d-flex justify-content-between align-items-end mb-4">
+                <div>
+                    <h2 className="fw-bold mb-0">Gestión de Torres</h2>
+                    <p className="text-muted mb-0">Administra las torres y bloques de tus condominios</p>
+                </div>
+                <div className="dropdown">
+                    <button
+                        className="btn btn-theme-body border-theme rounded-pill px-4 fw-bold dropdown-toggle shadow-sm transition-all d-flex align-items-center justify-content-between"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        style={{ minWidth: '240px' }}
+                    >
+                        <div className="d-flex align-items-center">
+                            <div className="bg-brand bg-opacity-10 text-brand rounded-circle p-1 me-2 d-flex align-items-center justify-content-center" style={{ width: '28px', height: '28px' }}>
+                                <i className="bi bi-building-fill fs-6 lh-1"></i>
+                            </div>
+                            <span>{selectedCondoId ? condominios.find(c => c.id === selectedCondoId)?.nombre : 'Todos los Condominios'}</span>
+                        </div>
+                    </button>
+                    <ul className="dropdown-menu shadow-lg border-0 rounded-4 p-2 mt-2 animate slideIn">
+                        <li>
+                            <button
+                                className={`dropdown-item rounded-3 fw-bold mb-1 d-flex align-items-center ${selectedCondoId === null ? 'active bg-brand text-white' : ''}`}
+                                onClick={() => setSelectedCondoId(null)}
+                            >
+                                <i className="bi bi-grid-fill me-2"></i>Todos los Condominios
+                            </button>
+                        </li>
+                        <li><hr className="dropdown-divider opacity-50" /></li>
+                        {condominios.map(c => (
+                            <li key={c.id}>
+                                <button
+                                    className={`dropdown-item rounded-3 mb-1 fw-bold d-flex align-items-center ${selectedCondoId === c.id ? 'active bg-brand text-white' : ''}`}
+                                    onClick={() => setSelectedCondoId(c.id)}
+                                >
+                                    <i className="bi bi-building me-2"></i>{c.nombre}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             </div>
 
-            <div className="card border-0 shadow-sm mb-4 torre-card p-3"><div className="row g-3 align-items-center">
-                <div className="col-md-9"><div className="input-group border-theme rounded-pill overflow-hidden"><span className="input-group-text bg-transparent border-0 pe-0"><i className="bi bi-search"></i></span><input className="form-control border-0 bg-transparent" placeholder="Buscar torre por nombre o condominio..." onChange={e => setSearch(e.target.value)} /></div></div>
-                <div className="col-md-3 text-end"><button className="btn btn-brand px-4" onClick={() => handleAdd()}><i className="bi bi-plus-lg me-2"></i>Nueva</button></div>
-            </div></div>
+            <div className="card border-0 shadow-sm mb-5 torre-card p-4 rounded-4">
+                <div className="row g-3 align-items-center">
+                    <div className="col-md-9">
+                        <div className="input-group bg-theme-body border-theme rounded-pill overflow-hidden px-2 py-1">
+                            <span className="input-group-text bg-transparent border-0 pe-2 d-flex align-items-center">
+                                <i className="bi bi-search text-brand fs-5 lh-1"></i>
+                            </span>
+                            <input className="form-control border-0 bg-transparent fs-6 py-2" placeholder="Buscar torre por nombre o condominio..." onChange={e => setSearch(e.target.value)} />
+                        </div>
+                    </div>
+                    <div className="col-md-3 text-end">
+                        <button className="btn btn-brand rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center" onClick={() => handleAdd()}>
+                            <i className="bi bi-plus-lg me-2 lh-1"></i>
+                            <span>Nueva Torre</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             {loading ? (
                 <div className="text-center py-5">
@@ -110,7 +151,7 @@ const TorresPage = () => {
                     <div className="py-5">
                         <i className="bi bi-buildings text-muted mb-3" style={{ fontSize: '3rem' }}></i>
                         <h5 className="text-muted">No hay torres para mostrar en este momento.</h5>
-                        <p className="text-muted small">Haz clic en el botón "Nueva" para comenzar a agregar torres.</p>
+                        <p className="text-muted small">Haz clic en el botón "Nueva Torre" para comenzar a agregar torres.</p>
                     </div>
                 </div>
             ) : (
@@ -121,10 +162,16 @@ const TorresPage = () => {
                         return (
                             <div className="accordion-item border-0 shadow-sm rounded-4 overflow-hidden" key={condoId}>
                                 <h2 className="accordion-header">
-                                    <button className="accordion-button px-4 py-3 fw-bold fs-5" data-bs-toggle="collapse" data-bs-target={`#c-${i}`}>
-                                        <i className="bi bi-building-fill text-brand me-3"></i>
-                                        {condoName}
-                                        <span className="badge bg-theme-body text-muted ms-3 fw-normal">{list.length} Torres</span>
+                                    <button className="accordion-button px-4 py-3 fw-bold fs-5 shadow-none bg-theme-body border-bottom border-theme" data-bs-toggle="collapse" data-bs-target={`#c-${i}`}>
+                                        <div className="bg-brand bg-opacity-20 text-brand rounded-3 p-2 me-3 d-flex align-items-center justify-content-center shadow-sm" style={{ width: '40px', height: '40px' }}>
+                                            <i className="bi bi-building-fill fs-5"></i>
+                                        </div>
+                                        <div className="flex-grow-1">
+                                            <div className="d-flex align-items-center justify-content-between">
+                                                <span className="text-theme">{condoName}</span>
+                                                <span className="badge bg-theme-body border border-theme text-muted fw-normal fs-6 me-4">{list.length} Torres</span>
+                                            </div>
+                                        </div>
                                     </button>
                                 </h2>
                                 <div id={`c-${i}`} className="accordion-collapse collapse show">
@@ -135,9 +182,6 @@ const TorresPage = () => {
                                                     <TorreCard torre={t} onManage={torre => { setForm({ ...torre }); setDrawer({ open: true, edit: true }); }} />
                                                 </div>
                                             ))}
-                                            <div className="col-md-6 col-lg-4">
-                                                <TorreAgregarCard onAgregar={() => handleAdd(parseInt(condoId))} />
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
