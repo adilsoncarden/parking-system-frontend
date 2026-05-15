@@ -1,29 +1,40 @@
-import { pisosMock } from "../data/condominiosData";
-import { fakeDelay, generateId } from "./_apiHelper";
-
-let _cache = [...pisosMock];
+import  api  from './api';
 
 export const pisoService = {
-    getAll: () => fakeDelay([..._cache]),
 
-    getByTorre: (id_torre) =>
-        fakeDelay(_cache.filter(p => p.id_torre === id_torre)),
-
-    getById: (id) => fakeDelay(_cache.find(p => p.id === id) || null),
-
-    create: (data) => {
-        const nuevo = { ...data, id: generateId(_cache) };
-        _cache = [..._cache, nuevo];
-        return fakeDelay(nuevo);
+    getAll: async () => {
+        const response = await api.get('/admin/pisos');
+        return response.data;
     },
 
-    update: (id, data) => {
-        _cache = _cache.map(p => p.id === id ? { ...p, ...data } : p);
-        return fakeDelay(_cache.find(p => p.id === id));
+    getByTorre: async (idTorre) => {
+        const response = await api.get(`/admin/pisos/torre/${idTorre}`);
+        return response.data;
     },
 
-    delete: (id) => {
-        _cache = _cache.filter(p => p.id !== id);
-        return fakeDelay({ success: true, id });
+    getById: async (id) => {
+        const response = await api.get(`/admin/pisos/${id}`);
+        return response.data;
+    },
+
+    create: async (data) => {
+        const response = await api.post('/admin/pisos', {
+            numeroPiso: data.numero_piso,
+            idTorre: data.id_torre
+        });
+        return response.data;
+    },
+
+    update: async (id, data) => {
+        const response = await api.put(`/admin/pisos/${id}`, {
+            numeroPiso: data.numero_piso,
+            idTorre: data.id_torre
+        });
+        return response.data;
+    },
+
+    delete: async (id) => {
+        await api.delete(`/admin/pisos/${id}`);
+        return { success: true, id };
     },
 };
