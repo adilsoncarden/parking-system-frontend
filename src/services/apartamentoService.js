@@ -1,29 +1,71 @@
-import { apartamentosMock } from "../data/condominiosData";
-import { fakeDelay, generateId } from "./_apiHelper";
+import api from "./api";
 
-let _cache = [...apartamentosMock];
+// ═══════════════════════════════════════════════════════════
+// APARTAMENTO SERVICE
+// Conecta con el backend Spring Boot real.
+// Endpoints: /admin/apartamentos
+// ═══════════════════════════════════════════════════════════
+
+// Mapeo de lo que recibimos del servidor (Entity) a lo que usa el Frontend
+const fromBackend = (a) => ({
+    id: a.idApartamento || a.id,
+    numero: a.numero || a.numeroApartamento,
+    id_piso: a.piso ? a.piso.id : a.idPiso,
+    propietario: a.propietario || '',
+    estado: a.estado || 'Disponible',
+    createdAt: a.createdAt,
+});
+
+// Mapeo de lo que enviamos al servidor (ApartamentoRequest DTO)
+const toBackend = (a) => ({
+    numero: a.numero,
+    idPiso: parseInt(a.id_piso),
+    propietario: a.propietario,
+    estado: a.estado
+});
+
+// Configuración de headers para incluir el Token JWT de forma explícita
+const getAuthConfig = () => ({
+    headers: {
+        'Authorization': `Bearer ${localStorage.getItem("token")}`
+    }
+});
 
 export const apartamentoService = {
-    getAll: () => fakeDelay([..._cache]),
 
-    getByPiso: (id_piso) =>
-        fakeDelay(_cache.filter(a => a.id_piso === id_piso)),
-
-    getById: (id) => fakeDelay(_cache.find(a => a.id === id) || null),
-
-    create: (data) => {
-        const nuevo = { ...data, id: generateId(_cache) };
-        _cache = [..._cache, nuevo];
-        return fakeDelay(nuevo);
+    // GET /admin/apartamentos
+    getAll: async () => {
+        const res = await api.get("/admin/apartamentos", getAuthConfig());
+        return Array.isArray(res.data) ? res.data.map(fromBackend) : [];
     },
 
-    update: (id, data) => {
-        _cache = _cache.map(a => a.id === id ? { ...a, ...data } : a);
-        return fakeDelay(_cache.find(a => a.id === id));
+    // GET /admin/apartamentos/piso/{idPiso}
+    getByPiso: async (id_piso) => {
+        const res = await api.get(`/admin/apartamentos/piso/${id_piso}`, getAuthConfig());
+        return Array.isArray(res.data) ? res.data.map(fromBackend) : [];
     },
 
-    delete: (id) => {
-        _cache = _cache.filter(a => a.id !== id);
-        return fakeDelay({ success: true, id });
+    // GET /admin/apartamentos/{id}
+    getById: async (id) => {
+        const res = await api.get(`/admin/apartamentos/${id}`, getAuthConfig());
+        return fromBackend(res.data);
+    },
+
+    // POST /admin/apartamentos
+    create: async (datos) => {
+        const res = await api.post("/admin/apartamentos", toBackend(datos), getAuthConfig());
+        return fromBackend(res.data);
+    },
+
+    // PUT /admin/apartamentos/{id}
+    update: async (id, datos) => {
+        const res = await api.put(`/admin/apartamentos/${id}`, toBackend(datos), getAuthConfig());
+        return fromBackend(res.data);
+    },
+
+    // DELETE /admin/apartamentos/{id}
+    delete: async (id) => {
+        await api.delete(`/admin/apartamentos/${id}`, getAuthConfig());
+        return true;
     },
 };
