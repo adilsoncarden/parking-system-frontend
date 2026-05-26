@@ -11,6 +11,7 @@ const FORM_VACIO = {
     imagen: null,
     lat: null,
     lng: null,
+    numEntradas: 1,
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -38,12 +39,13 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
     const [form, setForm] = useState(() => {
         if (condominioEditar) {
             return {
-                nombre:    condominioEditar.nombre    || "",
+                nombre: condominioEditar.nombre || "",
                 direccion: condominioEditar.direccion || "",
-                tipo:      condominioEditar.tipo      || "residencial",
-                imagen:    condominioEditar.imagen    || null,
-                lat:       condominioEditar.lat       || null,
-                lng:       condominioEditar.lng       || null,
+                tipo: condominioEditar.tipo || "residencial",
+                imagen: condominioEditar.imagen || null,
+                lat: condominioEditar.lat || null,
+                lng: condominioEditar.lng || null,
+                numEntradas: condominioEditar.numEntradas || 1,
             };
         }
         return FORM_VACIO;
@@ -173,8 +175,25 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
                                 />
                             </div>
 
+                            {/* Número de entradas/salidas */}
+                            <div className="col-12 col-md-6">
+                                <label htmlFor="condo-entradas" className="form-label fw-bold small text-uppercase">
+                                    Número de Entradas / Salidas
+                                </label>
+                                <input
+                                    id="condo-entradas"
+                                    type="number"
+                                    className="form-control"
+                                    placeholder="Ej: 2"
+                                    min="1"
+                                    value={form.numEntradas || ''}
+                                    onChange={(e) => setForm({ ...form, numEntradas: parseInt(e.target.value) || 1 })}
+                                />
+                                <small className="text-muted">Cada entrada tendrá sus propios carritos de carga.</small>
+                            </div>
+
                             {/* Tipo de condominio */}
-                            <div className="col-12">
+                            <div className="col-12 col-md-6">
                                 <label className="form-label fw-bold small text-uppercase">
                                     Tipo de Condominio
                                 </label>
