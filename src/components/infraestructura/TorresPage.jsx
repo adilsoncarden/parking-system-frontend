@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
-import { pisoService } from "../../services/pisoService";
+import { useState, useEffect } from "react";
 import { torreService } from "../../services/torreService";
 import { condominioService } from "../../services/condominioService";
 import { getApiErrorMessage } from "../../services/api";
@@ -11,44 +10,39 @@ import EstadoBadge from "./crud/EstadoBadge";
 import RowActions from "./crud/RowActions";
 import { usePagination } from "../../hooks/usePagination";
 
-const EMPTY_FORM = { numero: "", condominioId: "", torreId: "", estado: "ACTIVO" };
+const EMPTY_FORM = { nombre: "", condominioId: "", estado: "ACTIVO" };
 
 const COLUMNS = [
     { key: "idx", label: "#" },
-    { key: "numero", label: "Número" },
-    { key: "torre", label: "Torre" },
+    { key: "nombre", label: "Nombre" },
     { key: "condominio", label: "Condominio" },
     { key: "estado", label: "Estado" },
     { key: "actions", label: "Acciones", className: "text-end" },
 ];
 
-const PisosPage = () => {
+const TorresPage = () => {
     const [items, setItems] = useState([]);
-    const [torres, setTorres] = useState([]);
     const [condominios, setCondominios] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filtering, setFiltering] = useState(false);
     const [saving, setSaving] = useState(false);
     const [pageError, setPageError] = useState("");
     const [success, setSuccess] = useState("");
-    const [filtroTorreId, setFiltroTorreId] = useState("");
+    const [filtroCondominioId, setFiltroCondominioId] = useState("");
     const [showModal, setShowModal] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [selected, setSelected] = useState(null);
     const [form, setForm] = useState(EMPTY_FORM);
     const [modalError, setModalError] = useState("");
 
-    const loadCatalogos = async () => {
-        const [torresData, condosData] = await Promise.all([
-            torreService.getAll(),
-            condominioService.getAll(),
-        ]);
-        setTorres(torresData);
-        setCondominios(condosData);
+    const loadCondominios = async () => {
+        const data = await condominioService.getAll();
+        setCondominios(data);
+        return data;
     };
 
-    const loadItems = async (torreId = filtroTorreId) => {
-        const data = await pisoService.getAll(torreId || undefined);
+    const loadItems = async (condominioId = filtroCondominioId) => {
+        const data = await torreService.getAll(condominioId || undefined);
         setItems(data);
     };
 
@@ -56,10 +50,10 @@ const PisosPage = () => {
         (async () => {
             try {
                 setPageError("");
-                await loadCatalogos();
+                await loadCondominios();
                 await loadItems();
             } catch (err) {
-                setPageError(getApiErrorMessage(err, "Error al cargar pisos"));
+                setPageError(getApiErrorMessage(err, "Error al cargar torres"));
             } finally {
                 setLoading(false);
             }
@@ -71,36 +65,32 @@ const PisosPage = () => {
         (async () => {
             setFiltering(true);
             try {
-                await loadItems(filtroTorreId);
+                await loadItems(filtroCondominioId);
             } catch (err) {
-                setPageError(getApiErrorMessage(err, "Error al filtrar pisos"));
+                setPageError(getApiErrorMessage(err, "Error al filtrar torres"));
             } finally {
                 setFiltering(false);
             }
         })();
-    }, [filtroTorreId]);
-
-    const torresForm = useMemo(() => {
-        if (!form.condominioId) return torres;
-        return torres.filter((t) => t.condominioId === Number(form.condominioId));
-    }, [torres, form.condominioId]);
+    }, [filtroCondominioId]);
 
     const openCreate = () => {
         setEditMode(false);
         setSelected(null);
-        setForm(EMPTY_FORM);
+        setForm({
+            ...EMPTY_FORM,
+            condominioId: filtroCondominioId || condominios[0]?.id || "",
+        });
         setModalError("");
         setShowModal(true);
     };
 
     const openEdit = (item) => {
-        const torre = torres.find((t) => t.id === item.torreId);
         setEditMode(true);
         setSelected(item);
         setForm({
-            numero: item.numero ?? "",
-            condominioId: torre?.condominioId || item.condominioId || "",
-            torreId: item.torreId || "",
+            nombre: item.nombre || "",
+            condominioId: item.condominioId || "",
             estado: item.estado || "ACTIVO",
         });
         setModalError("");
@@ -112,32 +102,23 @@ const PisosPage = () => {
         setModalError("");
     };
 
-    const handleCondominioChange = (condominioId) => {
-        setForm((prev) => ({ ...prev, condominioId, torreId: "" }));
-    };
-
     const handleSave = async () => {
-        if (!form.condominioId || !form.torreId || form.numero === "") {
-            setModalError("Condominio, torre y número son obligatorios.");
-            return;
-        }
-        if (Number(form.numero) <= 0) {
-            setModalError("El número de piso debe ser mayor a 0.");
+        if (!form.nombre.trim() || !form.condominioId) {
+            setModalError("Nombre y condominio son obligatorios.");
             return;
         }
         setSaving(true);
         setModalError("");
         setSuccess("");
-        const payload = { numero: form.numero, torreId: form.torreId, estado: form.estado };
         try {
             if (editMode) {
-                await pisoService.update(selected.id, payload);
-                setSuccess("Piso actualizado correctamente.");
+                await torreService.update(selected.id, form);
+                setSuccess("Torre actualizada correctamente.");
             } else {
-                await pisoService.create(payload);
-                setSuccess("Piso creado correctamente.");
+                await torreService.create(form);
+                setSuccess("Torre creada correctamente.");
             }
-            await loadItems(filtroTorreId);
+            await loadItems(filtroCondominioId);
             closeModal();
         } catch (err) {
             setModalError(getApiErrorMessage(err, "Error al guardar"));
@@ -147,13 +128,13 @@ const PisosPage = () => {
     };
 
     const handleDelete = async (item) => {
-        if (!window.confirm(`¿Eliminar el piso ${item.numero}?`)) return;
+        if (!window.confirm(`¿Eliminar la torre "${item.nombre}"?`)) return;
         setSaving(true);
         setSuccess("");
         try {
-            await pisoService.delete(item.id);
-            await loadItems(filtroTorreId);
-            setSuccess("Piso eliminado correctamente.");
+            await torreService.delete(item.id);
+            await loadItems(filtroCondominioId);
+            setSuccess("Torre eliminada correctamente.");
         } catch (err) {
             setPageError(getApiErrorMessage(err, "Error al eliminar"));
         } finally {
@@ -161,25 +142,20 @@ const PisosPage = () => {
         }
     };
 
-    const getCondominioNombre = (item) => {
-        if (item.condominioId) {
-            return condominios.find((c) => c.id === item.condominioId)?.nombre || "—";
-        }
-        const torre = torres.find((t) => t.id === item.torreId);
-        return condominios.find((c) => c.id === torre?.condominioId)?.nombre || "—";
-    };
+    const getCondominioNombre = (condominioId) =>
+        condominios.find((c) => c.id === condominioId)?.nombre || "—";
 
     const filter = (
         <select
             className="form-select form-select-sm"
             style={{ width: "200px" }}
-            value={filtroTorreId}
-            onChange={(e) => setFiltroTorreId(e.target.value)}
+            value={filtroCondominioId}
+            onChange={(e) => setFiltroCondominioId(e.target.value)}
         >
-            <option value="">Todas las torres</option>
-            {torres.map((t) => (
-                <option key={t.id} value={t.id}>
-                    {t.nombre}
+            <option value="">Todos los condominios</option>
+            {condominios.map((c) => (
+                <option key={c.id} value={c.id}>
+                    {c.nombre}
                 </option>
             ))}
         </select>
@@ -190,11 +166,8 @@ const PisosPage = () => {
     const rows = pagination.paginatedItems.map((item, index) => (
         <tr key={item.id}>
             <td className="px-4 py-3">{pagination.rowIndex(index)}</td>
-            <td className="px-4 py-3">
-                <span className="badge bg-primary rounded-pill">Piso {item.numero}</span>
-            </td>
-            <td className="px-4 py-3">{item.torreNombre || torres.find((t) => t.id === item.torreId)?.nombre || "—"}</td>
-            <td className="px-4 py-3">{getCondominioNombre(item)}</td>
+            <td className="fw-semibold px-4 py-3">{item.nombre}</td>
+            <td className="px-4 py-3">{item.condominioNombre || getCondominioNombre(item.condominioId)}</td>
             <td className="px-4 py-3"><EstadoBadge estado={item.estado} /></td>
             <RowActions
                 onEdit={() => openEdit(item)}
@@ -207,41 +180,50 @@ const PisosPage = () => {
     return (
         <CrudPageLayout
             loading={loading}
-            title="Gestión de Pisos"
-            subtitle="Administra los pisos de cada torre del condominio"
+            title="Gestión de Torres"
+            subtitle="Administra las torres de cada condominio"
             pageError={pageError}
             success={success}
             onDismissError={() => setPageError("")}
             onDismissSuccess={() => setSuccess("")}
         >
             <CrudTableCard
-                title="Listado de Pisos"
+                title="Listado de Torres"
                 filter={filter}
                 onAdd={openCreate}
-                addLabel="Agregar Piso"
+                addLabel="Agregar Torre"
                 filtering={filtering}
                 saving={saving}
                 columns={COLUMNS}
                 colSpan={COLUMNS.length}
-                emptyMessage="No hay pisos registrados"
+                emptyMessage="No hay torres registradas"
                 rows={rows}
                 pagination={pagination}
             />
 
             <CrudModal
                 show={showModal}
-                title={editMode ? "Editar Piso" : "Agregar Piso"}
+                title={editMode ? "Editar Torre" : "Agregar Torre"}
                 error={modalError}
                 saving={saving}
                 onClose={closeModal}
                 onSave={handleSave}
                 editMode={editMode}
             >
+                <FormField label="Nombre" required>
+                    <input
+                        type="text"
+                        className="form-control"
+                        value={form.nombre}
+                        onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                        disabled={saving}
+                    />
+                </FormField>
                 <FormField label="Condominio" required>
                     <select
                         className="form-select"
                         value={form.condominioId}
-                        onChange={(e) => handleCondominioChange(e.target.value)}
+                        onChange={(e) => setForm({ ...form, condominioId: e.target.value })}
                         disabled={saving}
                     >
                         <option value="">Selecciona un condominio</option>
@@ -251,31 +233,6 @@ const PisosPage = () => {
                             </option>
                         ))}
                     </select>
-                </FormField>
-                <FormField label="Torre" required>
-                    <select
-                        className="form-select"
-                        value={form.torreId}
-                        onChange={(e) => setForm({ ...form, torreId: e.target.value })}
-                        disabled={saving || !form.condominioId}
-                    >
-                        <option value="">Selecciona una torre</option>
-                        {torresForm.map((t) => (
-                            <option key={t.id} value={t.id}>
-                                {t.nombre}
-                            </option>
-                        ))}
-                    </select>
-                </FormField>
-                <FormField label="Número de piso" required>
-                    <input
-                        type="number"
-                        className="form-control"
-                        min="1"
-                        value={form.numero}
-                        onChange={(e) => setForm({ ...form, numero: e.target.value })}
-                        disabled={saving}
-                    />
                 </FormField>
                 <FormField label="Estado" required>
                     <select
@@ -293,4 +250,4 @@ const PisosPage = () => {
     );
 };
 
-export default PisosPage;
+export default TorresPage;
