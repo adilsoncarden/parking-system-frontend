@@ -17,7 +17,7 @@ import PisosPage        from "./components/infraestructura/PisosPage";
 import ApartamentosPage from "./components/infraestructura/ApartamentosPage";
 
 // ── carritos ──────────────────────────────────────────
-import CarritosPageWrapper from "./components/carritos/CarritosPageWrapper";
+import CarritosPage from "./components/carritos/CarritosPage";
 
 // ── config ────────────────────────────────────────────
 import ConfiguracionPage from "./components/config/ConfiguracionPage";
@@ -188,7 +188,7 @@ function AppContent() {
             }/>
             <Route path="/carritos" element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <PrivateLayout onLogout={handleLogout}><CarritosPageWrapper /></PrivateLayout>
+                    <PrivateLayout onLogout={handleLogout}><CarritosPage /></PrivateLayout>
                 </ProtectedRoute>
             }/>
             <Route path="/config" element={

@@ -1,17 +1,24 @@
 import apiService from "./api";
 
-const BASE = "/api/carritos";
+const BASE = "/api/usuarios";
 
-const toBackend = ({ codigo, descripcion, estado, condominioId }) => ({
-    codigo: codigo?.trim(),
-    descripcion: descripcion?.trim() || null,
-    estado: estado || "DISPONIBLE",
-    condominioId: Number(condominioId),
+const toBackend = (u) => ({
+    nombres: u.nombres?.trim(),
+    apellidos: u.apellidos?.trim(),
+    email: u.email?.trim(),
+    telefono: u.telefono?.trim() || null,
+    password: u.password,
+    tipoOcupante: u.tipoOcupante,
+    estado: u.estado,
+    rolId: Number(u.rolId),
+    apartamentoId: u.apartamentoId ? Number(u.apartamentoId) : null,
 });
 
-export const carritoService = {
-    getAll: async (condominioId) => {
-        const params = condominioId ? { condominioId } : {};
+export const usuarioService = {
+    getAll: async (rolId, apartamentoId) => {
+        const params = {};
+        if (rolId) params.rolId = rolId;
+        if (apartamentoId) params.apartamentoId = apartamentoId;
         const res = await apiService.get(BASE, { params });
         return res.data || [];
     },
