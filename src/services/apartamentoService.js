@@ -1,71 +1,54 @@
-import api from "./api";
+import apiService from "./api";
 
-// ═══════════════════════════════════════════════════════════
-// APARTAMENTO SERVICE
-// Conecta con el backend Spring Boot real.
-// Endpoints: /admin/apartamentos
-// ═══════════════════════════════════════════════════════════
+const BASE = "/api/apartamentos";
 
-// Mapeo de lo que recibimos del servidor (Entity) a lo que usa el Frontend
 const fromBackend = (a) => ({
-    id: a.idApartamento || a.id,
-    numero: a.numero || a.numeroApartamento,
-    id_piso: a.piso ? a.piso.id : a.idPiso,
-    propietario: a.propietario || '',
-    estado: a.estado || 'Disponible',
-    createdAt: a.createdAt,
-});
-
-// Mapeo de lo que enviamos al servidor (ApartamentoRequest DTO)
-const toBackend = (a) => ({
+    id: a.id,
     numero: a.numero,
-    idPiso: parseInt(a.id_piso),
-    propietario: a.propietario,
-    estado: a.estado
+    numero_apartamento: a.numero,
+    id_piso: a.pisoId,
+    area: a.area,
+    estado: a.estado,
+    pisoNumero: a.pisoNumero,
+    torreId: a.torreId,
+    torreNombre: a.torreNombre,
+    condominioId: a.condominioId,
 });
 
-// Configuración de headers para incluir el Token JWT de forma explícita
-const getAuthConfig = () => ({
-    headers: {
-        'Authorization': `Bearer ${localStorage.getItem("token")}`
-    }
+const toBackend = (a) => ({
+    numero: String(a.numero_apartamento || a.numero),
+    pisoId: Number(a.id_piso),
+    area: a.area ?? null,
+    estado: a.estado || "DISPONIBLE",
 });
 
 export const apartamentoService = {
 
-    // GET /admin/apartamentos
-    getAll: async () => {
-        const res = await api.get("/admin/apartamentos", getAuthConfig());
-        return Array.isArray(res.data) ? res.data.map(fromBackend) : [];
+    getAll: async (pisoId) => {
+        const params = pisoId ? { pisoId } : {};
+        const res = await apiService.get(BASE, { params });
+        return (res.data || []).map(fromBackend);
     },
 
-    // GET /admin/apartamentos/piso/{idPiso}
-    getByPiso: async (id_piso) => {
-        const res = await api.get(`/admin/apartamentos/piso/${id_piso}`, getAuthConfig());
-        return Array.isArray(res.data) ? res.data.map(fromBackend) : [];
-    },
+    getByPiso: async (pisoId) => apartamentoService.getAll(pisoId),
 
-    // GET /admin/apartamentos/{id}
     getById: async (id) => {
-        const res = await api.get(`/admin/apartamentos/${id}`, getAuthConfig());
+        const res = await apiService.get(`${BASE}/${id}`);
         return fromBackend(res.data);
     },
 
-    // POST /admin/apartamentos
     create: async (datos) => {
-        const res = await api.post("/admin/apartamentos", toBackend(datos), getAuthConfig());
+        const res = await apiService.post(`${BASE}/create`, toBackend(datos));
         return fromBackend(res.data);
     },
 
-    // PUT /admin/apartamentos/{id}
     update: async (id, datos) => {
-        const res = await api.put(`/admin/apartamentos/${id}`, toBackend(datos), getAuthConfig());
+        const res = await apiService.put(`${BASE}/${id}/update`, toBackend(datos));
         return fromBackend(res.data);
     },
 
-    // DELETE /admin/apartamentos/{id}
     delete: async (id) => {
-        await api.delete(`/admin/apartamentos/${id}`, getAuthConfig());
+        await apiService.delete(`${BASE}/${id}/delete`);
         return true;
     },
 };

@@ -7,20 +7,28 @@ import { condominioService } from "../../services/condominioService";
 const CondominiosPage = () => {
     const [condominios, setCondominios] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [condominioEditar, setCondominioEditar] = useState(null);
     const [prestamosActivos, setPrestamosActivos] = useState([]);
 
-    useEffect(() => {
-        const cargar = async () => {
+    const cargar = async () => {
+        try {
+            setError('');
             const data = await condominioService.getAll();
             setCondominios(data);
+        } catch (err) {
+            setError(err.forbidden ? err.message : 'Error al cargar condominios');
+        } finally {
             setLoading(false);
-        };
+        }
+    };
+
+    useEffect(() => {
         cargar();
     }, []);
 
-    // Sincroniza préstamos activos con localStorage
     useEffect(() => {
         const actualizarPrestamos = () => {
             const stored = JSON.parse(localStorage.getItem("prestamos") || "[]");
@@ -43,14 +51,36 @@ const CondominiosPage = () => {
     };
 
     const handleGuardar = async (datos) => {
-        if (condominioEditar) {
-            await condominioService.update(condominioEditar.id, datos);
-        } else {
-            await condominioService.create(datos);
+        setSaving(true);
+        setError('');
+        try {
+            if (condominioEditar) {
+                await condominioService.update(condominioEditar.id, datos);
+            } else {
+                await condominioService.create(datos);
+            }
+            await cargar();
+            setShowModal(false);
+        } catch (err) {
+            setError(err.forbidden ? err.message : 'Error al guardar el condominio');
+        } finally {
+            setSaving(false);
         }
-        const actualizado = await condominioService.getAll();
-        setCondominios(actualizado);
-        setShowModal(false);
+    };
+
+    const handleEliminar = async () => {
+        if (!condominioEditar || !window.confirm('¿Eliminar este condominio?')) return;
+        setSaving(true);
+        setError('');
+        try {
+            await condominioService.delete(condominioEditar.id);
+            await cargar();
+            setShowModal(false);
+        } catch (err) {
+            setError(err.forbidden ? err.message : 'Error al eliminar el condominio');
+        } finally {
+            setSaving(false);
+        }
     };
 
     if (loading) {
@@ -78,6 +108,10 @@ const CondominiosPage = () => {
                 </div>
             </div>
 
+            {error && (
+                <div className="alert alert-danger">{error}</div>
+            )}
+
             <section className="section">
                 <div className="row">
                     {condominios.map((condo) => (
@@ -100,7 +134,9 @@ const CondominiosPage = () => {
                 show={showModal}
                 onClose={() => setShowModal(false)}
                 onSave={handleGuardar}
+                onDelete={handleEliminar}
                 condominioEditar={condominioEditar}
+                saving={saving}
             />
         </div>
     );

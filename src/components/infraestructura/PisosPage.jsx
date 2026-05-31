@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { pisoService } from "../../services/pisoService";
 import { torreService } from "../../services/torreService";
 import { condominioService } from "../../services/condominioService";
@@ -8,31 +8,64 @@ const PisosPage = () => {
     const [torres, setTorres] = useState([]);
     const [condominios, setCondominios] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [pageError, setPageError] = useState('');
 
     const [filtroTorre, setFiltroTorre] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [modoEdicion, setModoEdicion] = useState(false);
     const [pisoSeleccionado, setPisoSeleccionado] = useState(null);
-    const [form, setForm] = useState({ numero_piso: '', id_torre: '' });
+    const [form, setForm] = useState({
+        numero_piso: '',
+        id_condominio: '',
+        id_torre: '',
+        estado: 'ACTIVO',
+    });
     const [error, setError] = useState('');
 
-    // Carga inicial de datos desde los servicios
+    const cargarDatos = async (torreIdFiltro = filtroTorre) => {
+        const [pisosData, torresData, condosData] = await Promise.all([
+            pisoService.getAll(torreIdFiltro || undefined),
+            torreService.getAll(),
+            condominioService.getAll(),
+        ]);
+        setPisos(pisosData);
+        setTorres(torresData);
+        setCondominios(condosData);
+    };
+
     useEffect(() => {
-        const cargarDatos = async () => {
-            const [pisosData, torresData, condosData] = await Promise.all([
-                pisoService.getAll(),
-                torreService.getAll(),
-                condominioService.getAll(),
-            ]);
-            setPisos(pisosData);
-            setTorres(torresData);
-            setCondominios(condosData);
-            setLoading(false);
+        const init = async () => {
+            try {
+                setPageError('');
+                await cargarDatos();
+            } catch (err) {
+                setPageError(err.forbidden ? err.message : 'Error al cargar pisos');
+            } finally {
+                setLoading(false);
+            }
         };
-        cargarDatos();
+        init();
     }, []);
 
-    // Helpers para mostrar nombres
+    useEffect(() => {
+        if (loading) return;
+        const filtrar = async () => {
+            try {
+                const data = await pisoService.getAll(filtroTorre || undefined);
+                setPisos(data);
+            } catch (err) {
+                setPageError(err.forbidden ? err.message : 'Error al filtrar pisos');
+            }
+        };
+        filtrar();
+    }, [filtroTorre]);
+
+    const torresFiltradasForm = useMemo(() => {
+        if (!form.id_condominio) return torres;
+        return torres.filter(t => t.id_condominio === parseInt(form.id_condominio, 10));
+    }, [torres, form.id_condominio]);
+
     const getTorreNombre = (id_torre) => {
         const torre = torres.find(t => t.id === id_torre);
         return torre ? torre.nombre : '-';
@@ -45,21 +78,23 @@ const PisosPage = () => {
         return condo ? condo.nombre : '-';
     };
 
-    const pisosFiltrados = filtroTorre
-        ? pisos.filter(p => p.id_torre === parseInt(filtroTorre))
-        : pisos;
-
     const abrirModalAgregar = () => {
         setModoEdicion(false);
-        setForm({ numero_piso: '', id_torre: '' });
+        setForm({ numero_piso: '', id_condominio: '', id_torre: '', estado: 'ACTIVO' });
         setError('');
         setShowModal(true);
     };
 
     const abrirModalEditar = (piso) => {
+        const torre = torres.find(t => t.id === piso.id_torre);
         setModoEdicion(true);
         setPisoSeleccionado(piso);
-        setForm({ numero_piso: piso.numero_piso, id_torre: piso.id_torre });
+        setForm({
+            numero_piso: piso.numero_piso,
+            id_condominio: torre?.id_condominio || '',
+            id_torre: piso.id_torre,
+            estado: piso.estado || 'ACTIVO',
+        });
         setError('');
         setShowModal(true);
     };
@@ -69,38 +104,57 @@ const PisosPage = () => {
         setError('');
     };
 
+    const handleCondominioChange = (id_condominio) => {
+        setForm(prev => ({
+            ...prev,
+            id_condominio,
+            id_torre: '',
+        }));
+    };
+
     const handleGuardar = async () => {
         if (!form.numero_piso || !form.id_torre) {
             setError('Por favor completa todos los campos.');
             return;
         }
-        if (isNaN(form.numero_piso) || parseInt(form.numero_piso) <= 0) {
+        if (isNaN(form.numero_piso) || parseInt(form.numero_piso, 10) <= 0) {
             setError('El número de piso debe ser un número positivo.');
             return;
         }
 
         const payload = {
-            numero_piso: parseInt(form.numero_piso),
-            id_torre: parseInt(form.id_torre),
+            numero_piso: parseInt(form.numero_piso, 10),
+            id_torre: parseInt(form.id_torre, 10),
+            estado: form.estado,
         };
 
-        if (modoEdicion) {
-            await pisoService.update(pisoSeleccionado.id, payload);
-        } else {
-            await pisoService.create(payload);
+        setSaving(true);
+        setError('');
+        try {
+            if (modoEdicion) {
+                await pisoService.update(pisoSeleccionado.id, payload);
+            } else {
+                await pisoService.create(payload);
+            }
+            await cargarDatos();
+            cerrarModal();
+        } catch (err) {
+            setError(err.forbidden ? err.message : 'Error al guardar el piso');
+        } finally {
+            setSaving(false);
         }
-
-        // Recarga la lista actualizada
-        const actualizado = await pisoService.getAll();
-        setPisos(actualizado);
-        cerrarModal();
     };
 
     const handleEliminar = async (id) => {
-        if (window.confirm('¿Estás seguro de eliminar este piso?')) {
+        if (!window.confirm('¿Estás seguro de eliminar este piso?')) return;
+        setSaving(true);
+        try {
             await pisoService.delete(id);
-            const actualizado = await pisoService.getAll();
-            setPisos(actualizado);
+            await cargarDatos();
+        } catch (err) {
+            setPageError(err.forbidden ? err.message : 'Error al eliminar el piso');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -128,6 +182,8 @@ const PisosPage = () => {
                     </div>
                 </div>
             </div>
+
+            {pageError && <div className="alert alert-danger">{pageError}</div>}
 
             <section className="section">
                 <div className="card">
@@ -159,18 +215,19 @@ const PisosPage = () => {
                                         <th>Número de Piso</th>
                                         <th>Torre</th>
                                         <th>Condominio</th>
+                                        <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {pisosFiltrados.length === 0 ? (
+                                    {pisos.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" className="text-center text-muted py-4">
+                                            <td colSpan="6" className="text-center text-muted py-4">
                                                 No hay pisos registrados
                                             </td>
                                         </tr>
                                     ) : (
-                                        pisosFiltrados.map((piso, index) => (
+                                        pisos.map((piso, index) => (
                                             <tr key={piso.id}>
                                                 <td>{index + 1}</td>
                                                 <td>
@@ -180,11 +237,16 @@ const PisosPage = () => {
                                                 </td>
                                                 <td>
                                                     <i className="bi bi-building-fill me-1 text-secondary"></i>
-                                                    {getTorreNombre(piso.id_torre)}
+                                                    {piso.torreNombre || getTorreNombre(piso.id_torre)}
                                                 </td>
                                                 <td>
                                                     <i className="bi bi-buildings me-1 text-secondary"></i>
                                                     {getCondominioNombre(piso.id_torre)}
+                                                </td>
+                                                <td>
+                                                    <span className={`badge ${piso.estado === 'ACTIVO' ? 'bg-success' : 'bg-secondary'}`}>
+                                                        {piso.estado}
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <button
@@ -196,6 +258,7 @@ const PisosPage = () => {
                                                     <button
                                                         className="btn btn-sm btn-danger"
                                                         onClick={() => handleEliminar(piso.id)}
+                                                        disabled={saving}
                                                     >
                                                         <i className="bi bi-trash-fill"></i>
                                                     </button>
@@ -205,9 +268,6 @@ const PisosPage = () => {
                                     )}
                                 </tbody>
                             </table>
-                        </div>
-                        <div className="mt-2 text-muted small">
-                            Mostrando {pisosFiltrados.length} de {pisos.length} pisos
                         </div>
                     </div>
                 </div>
@@ -221,12 +281,40 @@ const PisosPage = () => {
                                 <h5 className="modal-title">
                                     {modoEdicion ? 'Editar Piso' : 'Agregar Piso'}
                                 </h5>
-                                <button className="btn-close" onClick={cerrarModal}></button>
+                                <button className="btn-close" onClick={cerrarModal} disabled={saving}></button>
                             </div>
                             <div className="modal-body">
                                 {error && (
                                     <div className="alert alert-danger py-2 small">{error}</div>
                                 )}
+                                <div className="mb-3">
+                                    <label className="form-label">Condominio</label>
+                                    <select
+                                        className="form-select"
+                                        value={form.id_condominio}
+                                        onChange={e => handleCondominioChange(e.target.value)}
+                                        disabled={saving}
+                                    >
+                                        <option value="">Selecciona un condominio</option>
+                                        {condominios.map(c => (
+                                            <option key={c.id} value={c.id}>{c.nombre}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="mb-3">
+                                    <label className="form-label">Torre</label>
+                                    <select
+                                        className="form-select"
+                                        value={form.id_torre}
+                                        onChange={e => setForm({ ...form, id_torre: e.target.value })}
+                                        disabled={saving || !form.id_condominio}
+                                    >
+                                        <option value="">Selecciona una torre</option>
+                                        {torresFiltradasForm.map(t => (
+                                            <option key={t.id} value={t.id}>{t.nombre}</option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <div className="mb-3">
                                     <label className="form-label">Número de Piso</label>
                                     <input
@@ -236,28 +324,35 @@ const PisosPage = () => {
                                         min="1"
                                         value={form.numero_piso}
                                         onChange={e => setForm({ ...form, numero_piso: e.target.value })}
+                                        disabled={saving}
                                     />
                                 </div>
                                 <div className="mb-3">
-                                    <label className="form-label">Torre</label>
+                                    <label className="form-label">Estado</label>
                                     <select
                                         className="form-select"
-                                        value={form.id_torre}
-                                        onChange={e => setForm({ ...form, id_torre: e.target.value })}
+                                        value={form.estado}
+                                        onChange={e => setForm({ ...form, estado: e.target.value })}
+                                        disabled={saving}
                                     >
-                                        <option value="">Selecciona una torre</option>
-                                        {torres.map(t => (
-                                            <option key={t.id} value={t.id}>{t.nombre}</option>
-                                        ))}
+                                        <option value="ACTIVO">Activo</option>
+                                        <option value="INACTIVO">Inactivo</option>
                                     </select>
                                 </div>
                             </div>
                             <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={cerrarModal}>
+                                <button className="btn btn-secondary" onClick={cerrarModal} disabled={saving}>
                                     Cancelar
                                 </button>
-                                <button className="btn btn-primary" onClick={handleGuardar}>
-                                    {modoEdicion ? 'Guardar Cambios' : 'Agregar'}
+                                <button className="btn btn-primary" onClick={handleGuardar} disabled={saving}>
+                                    {saving ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2"></span>
+                                            Guardando...
+                                        </>
+                                    ) : (
+                                        modoEdicion ? 'Guardar Cambios' : 'Agregar'
+                                    )}
                                 </button>
                             </div>
                         </div>

@@ -1,29 +1,34 @@
 import React, { useState, useEffect, useMemo } from "react";
 import TorreCard from "./TorreCard";
-import TorreAgregarCard from "./TorreAgregarCard";
 import TorreModal from "./TorreModal";
 import { torreService } from "../../services/torreService";
 import { condominioService } from "../../services/condominioService";
 
-// No StatCard used in this view anymore
-
 const TorresPage = () => {
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
     const [search, setSearch] = useState("");
     const [drawer, setDrawer] = useState({ open: false, edit: false });
     const [torres, setTorres] = useState([]);
     const [condominios, setCondominios] = useState([]);
     const [selectedCondoId, setSelectedCondoId] = useState(null);
-    const [form, setForm] = useState({ id: null, nombre: "", id_condominio: "" });
+    const [form, setForm] = useState({ id: null, nombre: "", id_condominio: "", estado: "ACTIVO" });
+
+    const loadTorres = async (condominioId = null) => {
+        const t = await torreService.getAll(condominioId || undefined);
+        setTorres(t);
+    };
 
     useEffect(() => {
         const load = async () => {
             try {
-                const [t, c] = await Promise.all([torreService.getAll(), condominioService.getAll()]);
-                setTorres(t);
+                setError("");
+                const c = await condominioService.getAll();
                 setCondominios(c);
-            } catch (error) {
-                console.error("Error cargando torres:", error);
+                await loadTorres();
+            } catch (err) {
+                setError(err.forbidden ? err.message : "Error al cargar torres");
             } finally {
                 setLoading(false);
             }
@@ -31,11 +36,23 @@ const TorresPage = () => {
         load();
     }, []);
 
+    useEffect(() => {
+        if (loading) return;
+        const reload = async () => {
+            try {
+                await loadTorres(selectedCondoId);
+            } catch (err) {
+                setError(err.forbidden ? err.message : "Error al filtrar torres");
+            }
+        };
+        reload();
+    }, [selectedCondoId]);
+
     const filtered = useMemo(() => {
         return torres.filter(t => {
             const condo = condominios.find(c => c.id === t.id_condominio);
-            const condoName = condo ? condo.nombre : "";
-            return t.nombre.toLowerCase().includes(search.toLowerCase()) || 
+            const condoName = condo ? condo.nombre : (t.condominioNombre || "");
+            return t.nombre.toLowerCase().includes(search.toLowerCase()) ||
                    condoName.toLowerCase().includes(search.toLowerCase());
         });
     }, [torres, search, condominios]);
@@ -43,38 +60,54 @@ const TorresPage = () => {
     const grouped = useMemo(() => {
         const res = {};
         filtered.forEach(t => {
-            if (selectedCondoId === null || t.id_condominio === selectedCondoId) {
-                (res[t.id_condominio] = res[t.id_condominio] || []).push(t);
-            }
+            (res[t.id_condominio] = res[t.id_condominio] || []).push(t);
         });
         return res;
-    }, [filtered, selectedCondoId]);
+    }, [filtered]);
 
     const handleAdd = (condoId = null) => {
         setForm({
             id: null,
             nombre: "",
-            id_condominio: condoId || (condominios[0]?.id || "")
+            id_condominio: condoId || (condominios[0]?.id || ""),
+            estado: "ACTIVO",
         });
         setDrawer({ open: true, edit: false });
     };
 
     const save = async (e) => {
         e.preventDefault();
-        if (drawer.edit) {
-            await torreService.update(form.id, form);
-        } else {
-            await torreService.create(form);
+        if (!form.nombre?.trim() || !form.id_condominio) return;
+
+        setSaving(true);
+        setError("");
+        try {
+            if (drawer.edit) {
+                await torreService.update(form.id, form);
+            } else {
+                await torreService.create(form);
+            }
+            await loadTorres(selectedCondoId);
+            setDrawer({ open: false, edit: false });
+        } catch (err) {
+            setError(err.forbidden ? err.message : "Error al guardar la torre");
+        } finally {
+            setSaving(false);
         }
-        setTorres(await torreService.getAll());
-        setDrawer({ open: false, edit: false });
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm("¿Estás seguro de eliminar esta torre?")) {
+        if (!window.confirm("¿Estás seguro de eliminar esta torre?")) return;
+        setSaving(true);
+        setError("");
+        try {
             await torreService.delete(id);
-            setTorres(await torreService.getAll());
+            await loadTorres(selectedCondoId);
             setDrawer({ open: false, edit: false });
+        } catch (err) {
+            setError(err.forbidden ? err.message : "Error al eliminar la torre");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -123,6 +156,8 @@ const TorresPage = () => {
                 </div>
             </div>
 
+            {error && <div className="alert alert-danger">{error}</div>}
+
             <div className="card border-0 shadow-sm mb-5 torre-card p-4 rounded-4">
                 <div className="row g-3 align-items-center">
                     <div className="col-md-9">
@@ -134,7 +169,7 @@ const TorresPage = () => {
                         </div>
                     </div>
                     <div className="col-md-3 text-end">
-                        <button className="btn btn-brand rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center" onClick={() => handleAdd()}>
+                        <button className="btn btn-brand rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center" onClick={() => handleAdd(selectedCondoId)}>
                             <i className="bi bi-plus-lg me-2 lh-1"></i>
                             <span>Nueva Torre</span>
                         </button>
@@ -157,8 +192,8 @@ const TorresPage = () => {
             ) : (
                 <div className="accordion d-flex flex-column gap-3">
                     {Object.entries(grouped).map(([condoId, list], i) => {
-                        const condo = condominios.find(c => c.id === parseInt(condoId));
-                        const condoName = condo ? condo.nombre : "Otros";
+                        const condo = condominios.find(c => c.id === parseInt(condoId, 10));
+                        const condoName = condo ? condo.nombre : (list[0]?.condominioNombre || "Otros");
                         return (
                             <div className="accordion-item border-0 shadow-sm rounded-4 overflow-hidden" key={condoId}>
                                 <h2 className="accordion-header">
@@ -179,7 +214,7 @@ const TorresPage = () => {
                                         <div className="row g-4">
                                             {list.map(t => (
                                                 <div className="col-md-6 col-lg-4" key={t.id}>
-                                                    <TorreCard torre={t} onManage={torre => { setForm({ ...torre }); setDrawer({ open: true, edit: true }); }} />
+                                                    <TorreCard torre={t} onManage={torre => { setForm({ ...torre, estado: torre.estado || 'ACTIVO' }); setDrawer({ open: true, edit: true }); }} />
                                                 </div>
                                             ))}
                                         </div>
@@ -199,6 +234,7 @@ const TorresPage = () => {
                 save={save}
                 condominios={condominios}
                 onDelete={handleDelete}
+                saving={saving}
             />
         </div>
     );

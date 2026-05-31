@@ -1,67 +1,48 @@
-import api from "./api";
+import apiService from "./api";
 
-// ═══════════════════════════════════════════════════════════
-// TORRE SERVICE
-// Conecta con el backend Spring Boot real.
-// Endpoints: /admin/torres
-// ═══════════════════════════════════════════════════════════
+const BASE = "/api/torres";
 
-// Mapeo de lo que recibimos del servidor (Entity) a lo que usa el Frontend
 const fromBackend = (t) => ({
-    id: t.idTorres,
-    nombre: t.Nombre || t.nombre,
-    id_condominio: t.condominio ? t.condominio.id : t.idCondominio,
-    createdAt: t.createdAt,
+    id: t.id,
+    nombre: t.nombre,
+    id_condominio: t.condominioId,
+    estado: t.estado,
+    condominioNombre: t.condominioNombre,
 });
 
-// Mapeo de lo que enviamos al servidor (TorreRequest DTO)
 const toBackend = (t) => ({
     nombre: t.nombre,
-    idCondominio: parseInt(t.id_condominio),
-});
-
-// Configuración de headers para incluir el Token JWT de forma explícita
-const getAuthConfig = () => ({
-    headers: {
-        'Authorization': `Bearer ${localStorage.getItem("token")}`
-    }
+    condominioId: Number(t.id_condominio),
+    estado: t.estado || "ACTIVO",
 });
 
 export const torreService = {
 
-    // GET /admin/torres
-    getAll: async () => {
-        const res = await api.get("/admin/torres", getAuthConfig());
-        return Array.isArray(res.data) ? res.data.map(fromBackend) : [];
+    getAll: async (condominioId) => {
+        const params = condominioId ? { condominioId } : {};
+        const res = await apiService.get(BASE, { params });
+        return (res.data || []).map(fromBackend);
     },
 
-    // GET /admin/torres/condominio/{id}
-    getByCondominio: async (id_condominio) => {
-        const res = await api.get(`/admin/torres/condominio/${id_condominio}`, getAuthConfig());
-        return Array.isArray(res.data) ? res.data.map(fromBackend) : [];
-    },
+    getByCondominio: async (condominioId) => torreService.getAll(condominioId),
 
-    // GET /admin/torres/{id}
     getById: async (id) => {
-        const res = await api.get(`/admin/torres/${id}`, getAuthConfig());
+        const res = await apiService.get(`${BASE}/${id}`);
         return fromBackend(res.data);
     },
 
-    // POST /admin/torres
     create: async (datos) => {
-        const res = await api.post("/admin/torres", toBackend(datos), getAuthConfig());
+        const res = await apiService.post(`${BASE}/create`, toBackend(datos));
         return fromBackend(res.data);
     },
 
-    // PUT /admin/torres/{id}
     update: async (id, datos) => {
-        const res = await api.put(`/admin/torres/${id}`, toBackend(datos), getAuthConfig());
+        const res = await apiService.put(`${BASE}/${id}/update`, toBackend(datos));
         return fromBackend(res.data);
     },
 
-    // DELETE /admin/torres/{id}
     delete: async (id) => {
-        await api.delete(`/admin/torres/${id}`, getAuthConfig());
+        await apiService.delete(`${BASE}/${id}/delete`);
         return true;
     },
 };

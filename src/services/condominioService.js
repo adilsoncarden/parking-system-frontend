@@ -1,65 +1,50 @@
-import api from "./api";
+import apiService from "./api";
 
-// ═══════════════════════════════════════════════════════════
-// CONDOMINIO SERVICE
-// Conecta con el backend Spring Boot real.
-// Endpoints: /admin/condominios
-// El JWT se agrega automáticamente vía interceptor en api.js
-// ═══════════════════════════════════════════════════════════
-
-// El backend usa "latitud/longitud" pero el frontend usa "lat/lng".
-// Estos helpers traducen entre los dos formatos.
+const BASE = "/api/condominios";
 
 const fromBackend = (c) => ({
-    id:        c.id,
-    nombre:    c.nombre,
+    id: c.id,
+    nombre: c.nombre,
     direccion: c.direccion,
-    tipo:      c.tipo,
-    imagen:    c.imagen,
-    lat:       c.latitud,
-    lng:       c.longitud,
-    createdAt: c.createdAt,
-    updatedAt: c.updatedAt,
+    telefono: c.telefono,
+    email: c.email,
+    estado: c.estado,
+    tipo: c.estado === "INACTIVO" ? "premium" : "residencial",
 });
 
 const toBackend = (c) => ({
-    nombre:    c.nombre,
+    nombre: c.nombre,
     direccion: c.direccion,
-    tipo:      c.tipo,
-    imagen:    c.imagen,
-    latitud:   c.lat,
-    longitud:  c.lng,
+    telefono: c.telefono || null,
+    email: c.email || null,
+    estado: c.estado || "ACTIVO",
 });
 
 export const condominioService = {
 
-    // GET /admin/condominios
-    getAll: async () => {
-        const res = await api.get("/admin/condominios");
-        return res.data.map(fromBackend);
+    getAll: async (estado) => {
+        const params = estado != null ? { estado } : {};
+        const res = await apiService.get(BASE, { params });
+        return (res.data || []).map(fromBackend);
     },
 
-    // GET /admin/condominios/{id}
     getById: async (id) => {
-        const res = await api.get(`/admin/condominios/${id}`);
+        const res = await apiService.get(`${BASE}/${id}`);
         return fromBackend(res.data);
     },
 
-    // POST /admin/condominios
     create: async (datos) => {
-        const res = await api.post("/admin/condominios", toBackend(datos));
+        const res = await apiService.post(`${BASE}/create`, toBackend(datos));
         return fromBackend(res.data);
     },
 
-    // PUT /admin/condominios/{id}
     update: async (id, datos) => {
-        const res = await api.put(`/admin/condominios/${id}`, toBackend(datos));
+        const res = await apiService.put(`${BASE}/${id}/update`, toBackend(datos));
         return fromBackend(res.data);
     },
 
-    // DELETE /admin/condominios/{id}
     delete: async (id) => {
-        await api.delete(`/admin/condominios/${id}`);
+        await apiService.delete(`${BASE}/${id}/delete`);
         return true;
     },
 };

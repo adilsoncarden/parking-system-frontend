@@ -3,20 +3,19 @@ import MapaUbicacion from "../shared/MapaUbicacion";
 import ImageUploader from "../shared/ImageUploader";
 import TipoSelector from "../shared/TipoSelector";
 
-// Estado inicial vacío reusable
 const FORM_VACIO = {
     nombre: "",
     direccion: "",
+    telefono: "",
+    email: "",
+    estado: "ACTIVO",
     tipo: "residencial",
     imagen: null,
     lat: null,
     lng: null,
 };
 
-// ═══════════════════════════════════════════════════════════
-// Wrapper externo: decide si mostrar el modal y qué key usar
-// ═══════════════════════════════════════════════════════════
-const CondominioModal = ({ show, onClose, onSave, condominioEditar }) => {
+const CondominioModal = ({ show, onClose, onSave, onDelete, condominioEditar, saving }) => {
     if (!show) return null;
     const editarId = condominioEditar ? condominioEditar.id : "__new__";
     return (
@@ -24,34 +23,34 @@ const CondominioModal = ({ show, onClose, onSave, condominioEditar }) => {
             key={editarId}
             onClose={onClose}
             onSave={onSave}
+            onDelete={onDelete}
             condominioEditar={condominioEditar}
+            saving={saving}
         />
     );
 };
 
-// ═══════════════════════════════════════════════════════════
-// Modal real con estado interno
-// ═══════════════════════════════════════════════════════════
-const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
+const CondominioModalInner = ({ onClose, onSave, onDelete, condominioEditar, saving }) => {
     const modoEdicion = !!condominioEditar;
 
     const [form, setForm] = useState(() => {
         if (condominioEditar) {
             return {
-                nombre:    condominioEditar.nombre    || "",
+                nombre: condominioEditar.nombre || "",
                 direccion: condominioEditar.direccion || "",
-                tipo:      condominioEditar.tipo      || "residencial",
-                imagen:    condominioEditar.imagen    || null,
-                lat:       condominioEditar.lat       || null,
-                lng:       condominioEditar.lng       || null,
+                telefono: condominioEditar.telefono || "",
+                email: condominioEditar.email || "",
+                estado: condominioEditar.estado || "ACTIVO",
+                tipo: condominioEditar.tipo || "residencial",
+                imagen: condominioEditar.imagen || null,
+                lat: condominioEditar.lat || null,
+                lng: condominioEditar.lng || null,
             };
         }
         return FORM_VACIO;
     });
     const [direccionConfirmada, setDireccionConfirmada] = useState(!!condominioEditar?.direccion);
     const [error, setError] = useState("");
-
-    // Contador que dispara la búsqueda en el mapa cuando se incrementa
     const [triggerBuscar, setTriggerBuscar] = useState(0);
 
     const handleUbicacionChange = ({ lat, lng, direccionFormateada }) => {
@@ -69,15 +68,18 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
             setError("Escribe primero una dirección o selecciónala en el mapa.");
             return;
         }
-        // Dispara la búsqueda en el mapa
         setTriggerBuscar((prev) => prev + 1);
         setDireccionConfirmada(true);
         setError("");
     };
 
     const handleGuardar = () => {
-        if (!form.nombre || !form.direccion || !form.tipo) {
-            setError("Por favor completa todos los campos.");
+        if (!form.nombre?.trim() || !form.direccion?.trim()) {
+            setError("Por favor completa nombre y dirección.");
+            return;
+        }
+        if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+            setError("El correo electrónico no es válido.");
             return;
         }
         onSave({ ...form });
@@ -98,7 +100,7 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
                                     : "Ingresa los detalles de la nueva propiedad."}
                             </small>
                         </div>
-                        <button className="btn-close" onClick={onClose}></button>
+                        <button className="btn-close" onClick={onClose} disabled={saving}></button>
                     </div>
 
                     <div className="modal-body">
@@ -107,7 +109,6 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
                         )}
 
                         <div className="row g-3">
-                            {/* Nombre */}
                             <div className="col-12 col-md-6">
                                 <label htmlFor="condo-nombre" className="form-label fw-bold small text-uppercase">
                                     Nombre del Condominio
@@ -119,10 +120,10 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
                                     placeholder="ej. Torre Lumina Este"
                                     value={form.nombre}
                                     onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                                    disabled={saving}
                                 />
                             </div>
 
-                            {/* Dirección con botón check (que ahora busca en el mapa) */}
                             <div className="col-12 col-md-6">
                                 <label htmlFor="condo-direccion" className="form-label fw-bold small text-uppercase">
                                     Dirección
@@ -147,19 +148,56 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
                                                 handleConfirmarDireccion();
                                             }
                                         }}
+                                        disabled={saving}
                                     />
                                     <button
                                         type="button"
                                         className={`btn ${direccionConfirmada ? "btn-success" : "btn-outline-success"}`}
                                         onClick={handleConfirmarDireccion}
-                                        title="Confirmar y buscar en el mapa"
+                                        disabled={saving}
                                     >
                                         <i className="bi bi-check-lg"></i>
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Mapa */}
+                            <div className="col-12 col-md-6">
+                                <label className="form-label fw-bold small text-uppercase">Teléfono</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Opcional"
+                                    value={form.telefono}
+                                    onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+                                    disabled={saving}
+                                />
+                            </div>
+
+                            <div className="col-12 col-md-6">
+                                <label className="form-label fw-bold small text-uppercase">Email</label>
+                                <input
+                                    type="email"
+                                    className="form-control"
+                                    placeholder="contacto@condominio.com"
+                                    value={form.email}
+                                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                    disabled={saving}
+                                />
+                            </div>
+
+                            <div className="col-12 col-md-6">
+                                <label className="form-label fw-bold small text-uppercase">Estado</label>
+                                <select
+                                    className="form-select"
+                                    value={form.estado}
+                                    onChange={(e) => setForm({ ...form, estado: e.target.value })}
+                                    disabled={saving}
+                                >
+                                    <option value="ACTIVO">Activo</option>
+                                    <option value="INACTIVO">Inactivo</option>
+                                </select>
+                            </div>
+
                             <div className="col-12">
                                 <label className="form-label fw-bold small text-uppercase">
                                     Ubicación en el mapa
@@ -173,7 +211,6 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
                                 />
                             </div>
 
-                            {/* Tipo de condominio */}
                             <div className="col-12">
                                 <label className="form-label fw-bold small text-uppercase">
                                     Tipo de Condominio
@@ -184,7 +221,6 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
                                 />
                             </div>
 
-                            {/* Imagen */}
                             <div className="col-12">
                                 <label className="form-label fw-bold small text-uppercase">
                                     Imagen del Condominio
@@ -198,12 +234,31 @@ const CondominioModalInner = ({ onClose, onSave, condominioEditar }) => {
                     </div>
 
                     <div className="modal-footer">
-                        <button className="btn btn-link text-muted" onClick={onClose}>
+                        {modoEdicion && onDelete && (
+                            <button
+                                type="button"
+                                className="btn btn-outline-danger me-auto"
+                                onClick={onDelete}
+                                disabled={saving}
+                            >
+                                Eliminar
+                            </button>
+                        )}
+                        <button className="btn btn-link text-muted" onClick={onClose} disabled={saving}>
                             Cancelar
                         </button>
-                        <button className="btn btn-primary px-4" onClick={handleGuardar}>
-                            {modoEdicion ? "Guardar Cambios" : "Registrar Propiedad"}
-                            <i className="bi bi-arrow-right ms-2"></i>
+                        <button className="btn btn-primary px-4" onClick={handleGuardar} disabled={saving}>
+                            {saving ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm me-2"></span>
+                                    Guardando...
+                                </>
+                            ) : (
+                                <>
+                                    {modoEdicion ? "Guardar Cambios" : "Registrar Propiedad"}
+                                    <i className="bi bi-arrow-right ms-2"></i>
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>
