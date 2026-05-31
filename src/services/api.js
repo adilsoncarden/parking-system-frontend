@@ -25,6 +25,18 @@ const getStoredToken = () => {
     return raw.trim();
 };
 
+const setAuthorizationHeader = (config, token) => {
+    const value = `Bearer ${token}`;
+    if (!config.headers) {
+        config.headers = {};
+    }
+    if (typeof config.headers.set === "function") {
+        config.headers.set("Authorization", value);
+    } else {
+        config.headers.Authorization = value;
+    }
+};
+
 let sessionExpiredDispatched = false;
 
 export const resetSessionExpiredFlag = () => {
@@ -37,6 +49,11 @@ const notifySessionExpired = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("isAuthenticated");
+    try {
+        localStorage.removeItem("permisos");
+    } catch {
+        /* ignore */
+    }
     window.dispatchEvent(new CustomEvent(AUTH_SESSION_EXPIRED_EVENT));
 };
 
@@ -44,7 +61,11 @@ apiService.interceptors.request.use(
     (config) => {
         if (isAuthRequest(config)) {
             if (config.headers) {
-                delete config.headers.Authorization;
+                if (typeof config.headers.delete === "function") {
+                    config.headers.delete("Authorization");
+                } else {
+                    delete config.headers.Authorization;
+                }
             }
             return config;
         }
@@ -57,8 +78,7 @@ apiService.interceptors.request.use(
             });
         }
 
-        config.headers = config.headers || {};
-        config.headers.Authorization = `Bearer ${token}`;
+        setAuthorizationHeader(config, token);
         return config;
     },
     (error) => Promise.reject(error)
@@ -76,7 +96,9 @@ apiService.interceptors.response.use(
 
         if (status === 403) {
             error.forbidden = true;
-            error.message = error.response?.data?.message || "No tienes permisos para realizar esta acción";
+            error.message =
+                error.response?.data?.message ||
+                "No tienes permisos para realizar esta acción";
         }
 
         return Promise.reject(error);
@@ -91,7 +113,10 @@ export const getApiErrorMessage = (err, fallback = "Error en la operación") => 
     if (typeof data === "string" && data.trim()) return data;
     if (data?.message) return data.message;
     if (Array.isArray(data?.errors) && data.errors.length > 0) {
-        return data.errors.map((e) => e.defaultMessage || e.message).filter(Boolean).join(". ");
+        return data.errors
+            .map((e) => e.defaultMessage || e.message)
+            .filter(Boolean)
+            .join(". ");
     }
     if (err?.response?.status >= 500) return "Error del servidor. Intenta más tarde.";
     return err?.message || fallback;

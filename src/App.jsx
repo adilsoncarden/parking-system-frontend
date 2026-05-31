@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 // ── services ─────────────────────────────────────────
 import { authService } from "./services/authService";
 import { AUTH_SESSION_EXPIRED_EVENT, resetSessionExpiredFlag } from "./services/api";
+import { debugAuthToken, isLoggedIn } from "./utils/authGuard";
 
 // ── shared ──────────────────────────────────────────
 import LoginForm from "./components/shared/LoginForm";
@@ -84,10 +85,10 @@ function PrivateLayoutInner({ onLogout, children }) {
 }
 
 // ═══════════════════════════════════════════════════════
-// Ruta protegida — bloquea acceso si no hay sesión
+// Ruta protegida — solo valida token en localStorage
 // ═══════════════════════════════════════════════════════
-function ProtectedRoute({ isAuthenticated, children }) {
-    if (!isAuthenticated || !authService.isAuthenticated()) {
+function ProtectedRoute({ children }) {
+    if (!isLoggedIn()) {
         return <Navigate to="/login" replace />;
     }
     return children;
@@ -98,13 +99,14 @@ function ProtectedRoute({ isAuthenticated, children }) {
 // ═══════════════════════════════════════════════════════
 function LoginPage({ onLogin }) {
     return (
-        <div className="login-container">
-            <div
-                className="card shadow-lg p-4 mx-auto"
-                style={{ borderRadius: "15px", maxWidth: "400px", marginTop: "100px" }}
-            >
-                <div className="card-body">
-                    <h3 className="text-center mb-4 fw-bold">CondoSaaS</h3>
+        <div className="login-page">
+            <div className="card login-card p-4">
+                <div className="card-body px-2 px-sm-3">
+                    <div className="text-center mb-4">
+                        <i className="bi bi-buildings-fill login-brand-icon" />
+                        <h3 className="login-brand fw-bold mb-1">CondoSaaS</h3>
+                        <p className="login-subtitle mb-0">Gestión de condominios</p>
+                    </div>
                     <LoginForm onLogin={onLogin} />
                 </div>
             </div>
@@ -116,16 +118,24 @@ function LoginPage({ onLogin }) {
 // Componente raíz que vive dentro del Router
 // ═══════════════════════════════════════════════════════
 function AppContent() {
-    const [isAuthenticated, setIsAuthenticated] = useState(() => authService.isAuthenticated());
-
+    const [authVersion, setAuthVersion] = useState(0);
     const navigate = useNavigate();
+    const location = useLocation();
 
-    // Sincroniza si el localStorage cambia desde otra pestaña
+    const syncAuth = () => setAuthVersion((v) => v + 1);
+    const authenticated = useMemo(() => isLoggedIn(), [authVersion]);
+
     useEffect(() => {
-        const onStorage = () => setIsAuthenticated(authService.isAuthenticated());
+        syncAuth();
+    }, [location.pathname]);
+
+    useEffect(() => {
+        const onStorage = (e) => {
+            if (e.key === "token" || e.key === null) syncAuth();
+        };
         const onSessionExpired = () => {
             authService.logout();
-            setIsAuthenticated(false);
+            syncAuth();
             navigate("/login", { replace: true });
         };
         window.addEventListener("storage", onStorage);
@@ -137,69 +147,70 @@ function AppContent() {
     }, [navigate]);
 
     const handleLogin = () => {
+        debugAuthToken();
+        if (!isLoggedIn()) {
+            return;
+        }
         resetSessionExpiredFlag();
-        setIsAuthenticated(true);
-        navigate("/dashboard");
+        syncAuth();
+        navigate("/dashboard", { replace: true });
     };
 
     const handleLogout = () => {
         authService.logout();
-        setIsAuthenticated(false);
-        navigate("/login");
+        syncAuth();
+        navigate("/login", { replace: true });
     };
 
     return (
         <Routes>
-            {/* Ruta pública */}
             <Route
                 path="/login"
                 element={
-                    isAuthenticated
+                    authenticated
                         ? <Navigate to="/dashboard" replace />
                         : <LoginPage onLogin={handleLogin} />
                 }
             />
 
-            {/* Rutas protegidas */}
             <Route path="/dashboard" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedRoute>
                     <PrivateLayout onLogout={handleLogout}><Dashboard /></PrivateLayout>
                 </ProtectedRoute>
             }/>
             <Route path="/condominios" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedRoute>
                     <PrivateLayout onLogout={handleLogout}><CondominiosPage /></PrivateLayout>
                 </ProtectedRoute>
             }/>
             <Route path="/torres" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedRoute>
                     <PrivateLayout onLogout={handleLogout}><TorresPage /></PrivateLayout>
                 </ProtectedRoute>
             }/>
             <Route path="/pisos" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedRoute>
                     <PrivateLayout onLogout={handleLogout}><PisosPage /></PrivateLayout>
                 </ProtectedRoute>
             }/>
             <Route path="/apartamentos" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedRoute>
                     <PrivateLayout onLogout={handleLogout}><ApartamentosPage /></PrivateLayout>
                 </ProtectedRoute>
             }/>
             <Route path="/carritos" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedRoute>
                     <PrivateLayout onLogout={handleLogout}><CarritosPage /></PrivateLayout>
                 </ProtectedRoute>
             }/>
             <Route path="/config" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedRoute>
                     <PrivateLayout onLogout={handleLogout}><ConfiguracionPage /></PrivateLayout>
                 </ProtectedRoute>
             }/>
 
-            {/* Redirección por defecto */}
-            <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />}/>
-            <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />}/>
+            <Route path="/" element={<Navigate to={authenticated ? "/dashboard" : "/login"} replace />}/>
+            <Route path="*" element={<Navigate to={authenticated ? "/dashboard" : "/login"} replace />}/>
         </Routes>
     );
 }
