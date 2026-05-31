@@ -22,8 +22,18 @@ const Dashboard = () => {
                 const stats = await dashboardService.getStats();
                 if (!cancelled) setData(stats);
             } catch (err) {
-                if (!cancelled && err?.code !== "NO_TOKEN") {
+                if (!cancelled && err?.code !== "NO_TOKEN" && err?.response?.status !== 401) {
                     setError(getApiErrorMessage(err, "Error al cargar el dashboard"));
+                }
+                if (!cancelled && !err?.response) {
+                    setData({
+                        estadisticas: [],
+                        carritosStats: null,
+                        tasaOcupacion: 0,
+                        estadosData: [],
+                        reportePisos: [],
+                        resumenTorres: [],
+                    });
                 }
             } finally {
                 if (!cancelled) setLoading(false);
@@ -53,7 +63,69 @@ const Dashboard = () => {
         );
     }
 
-    const { estadisticas, tasaOcupacion, estadosData, reportePisos, resumenTorres } = data;
+    if (!data || !Array.isArray(data.estadisticas)) {
+        return (
+            <div className="page-heading">
+                <div className="alert alert-warning mb-0">
+                    No se pudieron cargar las estadísticas del dashboard.
+                </div>
+            </div>
+        );
+    }
+
+    const {
+        estadisticas,
+        carritosStats,
+        tasaOcupacion = 0,
+        estadosData = [],
+        reportePisos = [],
+        resumenTorres = [],
+    } = data;
+
+    const carritosCards = carritosStats
+        ? [
+              {
+                  label: "Total carritos",
+                  valor: carritosStats.totalCarritos,
+                  icon: "bi-cart-fill",
+                  color: "bg-primary",
+              },
+              {
+                  label: "Disponibles",
+                  valor: carritosStats.carritosDisponibles,
+                  icon: "bi-check-circle-fill",
+                  color: "bg-success",
+              },
+              {
+                  label: "En uso",
+                  valor: carritosStats.carritosEnUso,
+                  icon: "bi-arrow-left-right",
+                  color: "bg-warning text-dark",
+              },
+              {
+                  label: "Préstamos activos",
+                  valor: carritosStats.prestamosActivos,
+                  icon: "bi-clock-fill",
+                  color: "bg-info",
+              },
+              {
+                  label: "Penalizaciones activas",
+                  valor: carritosStats.penalizacionesActivas,
+                  icon: "bi-exclamation-triangle-fill",
+                  color: "bg-danger",
+              },
+              {
+                  label: "Recaudado (penalizaciones)",
+                  valor: new Intl.NumberFormat("es-PE", {
+                      style: "currency",
+                      currency: "PEN",
+                  }).format(carritosStats.totalRecaudadoPenalizaciones),
+                  icon: "bi-cash-coin",
+                  color: "bg-secondary",
+                  isText: true,
+              },
+          ]
+        : [];
 
     return (
         <div className="page-heading">
@@ -85,6 +157,39 @@ const Dashboard = () => {
                         </div>
                     ))}
                 </div>
+
+                {carritosCards.length > 0 && (
+                    <>
+                        <h5 className="fw-semibold mb-3">
+                            <i className="bi bi-cart me-2 text-primary" />
+                            Métricas de carritos
+                        </h5>
+                        <div className="row g-3 mb-4">
+                            {carritosCards.map((stat) => (
+                                <div className="col-6 col-lg-4 col-xl-2" key={stat.label}>
+                                    <div className="card border-0 shadow-sm h-100">
+                                        <div className="card-body d-flex align-items-center gap-3 py-3 px-3">
+                                            <div
+                                                className={`${stat.color} text-white rounded-3 d-flex align-items-center justify-content-center flex-shrink-0`}
+                                                style={{ width: "2.75rem", height: "2.75rem" }}
+                                            >
+                                                <i className={`bi ${stat.icon}`} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-muted small mb-1 fw-medium text-truncate">
+                                                    {stat.label}
+                                                </p>
+                                                <h5 className="mb-0 fw-bold">
+                                                    {stat.isText ? stat.valor : stat.valor}
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
 
                 <div className="card border-0 shadow-sm mb-4">
                     <div className="card-body py-4 px-4">

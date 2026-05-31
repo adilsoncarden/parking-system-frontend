@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { MENU_ITEMS } from "../../constants/permissions";
+import { hasPermission } from "../../utils/permissions";
 
 const Sidebar = ({ onLogout, sidebarOpen }) => {
     const location = useLocation();
 
-    // Control del Modo Oscuro
     useEffect(() => {
         const theme = localStorage.getItem("theme") || "light";
         document.documentElement.setAttribute("data-bs-theme", theme);
@@ -18,9 +19,10 @@ const Sidebar = ({ onLogout, sidebarOpen }) => {
         localStorage.setItem("theme", newTheme);
     };
 
-    // Helper que devuelve la clase del item según si la ruta está activa
     const itemClass = (path) =>
         `sidebar-item ${location.pathname === path ? "active" : ""}`;
+
+    const visibleMenu = MENU_ITEMS.filter((item) => hasPermission(item.permission));
 
     const sidebarStyle = {
         transition: "transform 0.3s ease",
@@ -34,17 +36,16 @@ const Sidebar = ({ onLogout, sidebarOpen }) => {
             style={sidebarStyle}
         >
             <div className="sidebar-wrapper active">
-                {/* CABECERA */}
                 <div className="sidebar-header position-relative">
                     <div className="d-flex justify-content-between align-items-center">
                         <div className="logo">
                             <NavLink to="/dashboard" className="fs-4 fw-bold">
-                                <i className="bi bi-buildings-fill me-2"></i>
+                                <i className="bi bi-buildings-fill me-2" />
                                 CondoSaaS
                             </NavLink>
                         </div>
                         <div className="theme-toggle d-flex gap-2 align-items-center mt-2">
-                            <i className="bi bi-sun-fill fs-6"></i>
+                            <i className="bi bi-sun-fill fs-6" />
                             <div className="form-check form-switch fs-6">
                                 <input
                                     className="form-check-input me-0"
@@ -54,72 +55,34 @@ const Sidebar = ({ onLogout, sidebarOpen }) => {
                                     style={{ cursor: "pointer" }}
                                 />
                             </div>
-                            <i className="bi bi-moon-fill fs-6"></i>
+                            <i className="bi bi-moon-fill fs-6" />
                         </div>
                     </div>
                 </div>
 
-                {/* MENÚ */}
                 <div className="sidebar-menu">
                     <ul className="menu">
                         <li className="sidebar-title">Principal</li>
 
-                        <li className={itemClass("/dashboard")}>
-                            <NavLink to="/dashboard" className="sidebar-link">
-                                <i className="bi bi-grid-fill"></i>
-                                <span>Dashboard</span>
-                            </NavLink>
-                        </li>
-
-                        <li className={itemClass("/condominios")}>
-                            <NavLink to="/condominios" className="sidebar-link">
-                                <i className="bi bi-building"></i>
-                                <span>Condominios</span>
-                            </NavLink>
-                        </li>
-
-                        <li className={itemClass("/torres")}>
-                            <NavLink to="/torres" className="sidebar-link">
-                                <i className="bi bi-building-fill"></i>
-                                <span>Torres</span>
-                            </NavLink>
-                        </li>
-
-                        <li className={itemClass("/pisos")}>
-                            <NavLink to="/pisos" className="sidebar-link">
-                                <i className="bi bi-layout-text-window-reverse"></i>
-                                <span>Pisos</span>
-                            </NavLink>
-                        </li>
-
-                        <li className={itemClass("/apartamentos")}>
-                            <NavLink to="/apartamentos" className="sidebar-link">
-                                <i className="bi bi-house-fill"></i>
-                                <span>Apartamentos</span>
-                            </NavLink>
-                        </li>
-
-                        <li className={itemClass("/carritos")}>
-                            <NavLink to="/carritos" className="sidebar-link">
-                                <i className="bi bi-cart-fill"></i>
-                                <span>Carritos</span>
-                            </NavLink>
-                        </li>
-
-                        <li className={itemClass("/config")}>
-                            <NavLink to="/config" className="sidebar-link">
-                                <i className="bi bi-gear-fill"></i>
-                                <span>Configuración</span>
-                            </NavLink>
-                        </li>
+                        {visibleMenu.map((item) => (
+                            <li key={item.path} className={itemClass(item.path)}>
+                                <NavLink to={item.path} className="sidebar-link">
+                                    <i className={`bi ${item.icon}`} />
+                                    <span>{item.label}</span>
+                                </NavLink>
+                            </li>
+                        ))}
 
                         <li className="sidebar-item">
                             <a
                                 href="#"
-                                onClick={(e) => { e.preventDefault(); onLogout(); }}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    onLogout();
+                                }}
                                 className="sidebar-link text-danger"
                             >
-                                <i className="bi bi-box-arrow-right text-danger"></i>
+                                <i className="bi bi-box-arrow-right text-danger" />
                                 <span>Cerrar Sesión</span>
                             </a>
                         </li>

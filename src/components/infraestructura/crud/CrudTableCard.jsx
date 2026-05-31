@@ -4,6 +4,7 @@ const CrudTableCard = ({
     title,
     filter,
     onAdd,
+    canAdd = true,
     addLabel = "Agregar",
     filtering,
     saving,
@@ -19,10 +20,12 @@ const CrudTableCard = ({
                 <h5 className="mb-0 fw-semibold">{title}</h5>
                 {filter}
             </div>
-            <button type="button" className="btn btn-primary btn-sm" onClick={onAdd} disabled={saving}>
-                <i className="bi bi-plus-lg me-1" />
-                {addLabel}
-            </button>
+            {canAdd && onAdd && (
+                <button type="button" className="btn btn-primary btn-sm" onClick={onAdd} disabled={saving}>
+                    <i className="bi bi-plus-lg me-1" />
+                    {addLabel}
+                </button>
+            )}
         </div>
         <div className="card-body position-relative p-0">
             {filtering && (
