@@ -1,32 +1,34 @@
-// ─────────────────────────────────────────────────────────────
-// FUENTE ÚNICA DE VERDAD — todos los módulos importan desde aquí
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// DATOS MOCK del sistema
+// Cuando llegue el backend, este archivo se borra y los
+// servicios harán fetch a la API real.
+// ═══════════════════════════════════════════════════════════
 
 export const condominiosBase = [
     {
         id: 1,
         nombre: "Condominio Los Álamos",
-        direccion: "Av. Primavera 123",
-        badge: "Residencial",
-        badgeColor: "#4e6ef2",
-        imagen: "/assets/images/condominios/condominio-los-alamos.jpg",
-        carritoIds: [1, 2],
+        direccion: "Av. Primavera 123, San Borja, Lima",
+        tipo: "residencial",
+        imagen: null, // se carga desde el modal
+        lat: -12.1059,
+        lng: -76.9989,
     },
     {
         id: 2,
         nombre: "Residencial El Bosque",
-        direccion: "Jr. Los Pinos 456",
-        badge: "Premium",
-        badgeColor: "#16a34a",
-        imagen: "/assets/images/condominios/condominio-el-bosque.jpg",
-        carritoIds: [3, 4],
+        direccion: "Jr. Los Pinos 456, Surco, Lima",
+        tipo: "premium",
+        imagen: null,
+        lat: -12.1391,
+        lng: -76.9936,
     },
 ];
 
 export const torresMock = [
     { id: 1, nombre: "Torre A", id_condominio: 1 },
     { id: 2, nombre: "Torre B", id_condominio: 1 },
-    { id: 3, nombre: "Torre C", id_condominio: 1 },
+    { id: 3, nombre: "Torre A", id_condominio: 2 },
 ];
 
 export const pisosMock = [
@@ -41,8 +43,8 @@ export const apartamentosMock = [
     { id: 1, numero_apartamento: "101", id_piso: 1, propietario: "Juan Pérez" },
     { id: 2, numero_apartamento: "102", id_piso: 1, propietario: "María López" },
     { id: 3, numero_apartamento: "201", id_piso: 2, propietario: "Carlos Ruiz" },
-    { id: 4, numero_apartamento: "202", id_piso: 2, propietario: "Ana Torres" },
-    { id: 5, numero_apartamento: "301", id_piso: 3, propietario: "Luis Mora" },
+    { id: 4, numero_apartamento: "202", id_piso: 2, propietario: "Ana García" },
+    { id: 5, numero_apartamento: "301", id_piso: 3, propietario: "Pedro Sánchez" },
 ];
 
 export const carritosMock = [

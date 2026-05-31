@@ -1,6 +1,8 @@
 import { useEffect } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 
-const Sidebar = ({ onLogout, setPagina, paginaActual, sidebarOpen }) => {
+const Sidebar = ({ onLogout, sidebarOpen }) => {
+    const location = useLocation();
 
     // Control del Modo Oscuro
     useEffect(() => {
@@ -16,7 +18,10 @@ const Sidebar = ({ onLogout, setPagina, paginaActual, sidebarOpen }) => {
         localStorage.setItem("theme", newTheme);
     };
 
-    // Estilos para el comportamiento responsive
+    // Helper que devuelve la clase del item según si la ruta está activa
+    const itemClass = (path) =>
+        `sidebar-item ${location.pathname === path ? "active" : ""}`;
+
     const sidebarStyle = {
         transition: "transform 0.3s ease",
         zIndex: 1000,
@@ -33,14 +38,10 @@ const Sidebar = ({ onLogout, setPagina, paginaActual, sidebarOpen }) => {
                 <div className="sidebar-header position-relative">
                     <div className="d-flex justify-content-between align-items-center">
                         <div className="logo">
-                            <a
-                                href="#"
-                                onClick={(e) => { e.preventDefault(); setPagina("dashboard"); }}
-                                className="fs-4 fw-bold"
-                            >
+                            <NavLink to="/dashboard" className="fs-4 fw-bold">
                                 <i className="bi bi-buildings-fill me-2"></i>
                                 CondoSaaS
-                            </a>
+                            </NavLink>
                         </div>
                         <div className="theme-toggle d-flex gap-2 align-items-center mt-2">
                             <i className="bi bi-sun-fill fs-6"></i>
@@ -63,57 +64,61 @@ const Sidebar = ({ onLogout, setPagina, paginaActual, sidebarOpen }) => {
                     <ul className="menu">
                         <li className="sidebar-title">Principal</li>
 
-                        <li className={`sidebar-item ${paginaActual === "dashboard" ? "active" : ""}`}>
-                            <a href="#" className="sidebar-link" onClick={(e) => { e.preventDefault(); setPagina("dashboard"); }}>
+                        <li className={itemClass("/dashboard")}>
+                            <NavLink to="/dashboard" className="sidebar-link">
                                 <i className="bi bi-grid-fill"></i>
                                 <span>Dashboard</span>
-                            </a>
+                            </NavLink>
                         </li>
 
-                        <li className={`sidebar-item ${paginaActual === "condominios" ? "active" : ""}`}>
-                            <a href="#" className="sidebar-link" onClick={(e) => { e.preventDefault(); setPagina("condominios"); }}>
+                        <li className={itemClass("/condominios")}>
+                            <NavLink to="/condominios" className="sidebar-link">
                                 <i className="bi bi-building"></i>
                                 <span>Condominios</span>
-                            </a>
+                            </NavLink>
                         </li>
 
-                        <li className={`sidebar-item ${paginaActual === "torres" ? "active" : ""}`}>
-                            <a href="#" className="sidebar-link" onClick={(e) => { e.preventDefault(); setPagina("torres"); }}>
+                        <li className={itemClass("/torres")}>
+                            <NavLink to="/torres" className="sidebar-link">
                                 <i className="bi bi-building-fill"></i>
                                 <span>Torres</span>
-                            </a>
+                            </NavLink>
                         </li>
 
-                        <li className={`sidebar-item ${paginaActual === "pisos" ? "active" : ""}`}>
-                            <a href="#" className="sidebar-link" onClick={(e) => { e.preventDefault(); setPagina("pisos"); }}>
+                        <li className={itemClass("/pisos")}>
+                            <NavLink to="/pisos" className="sidebar-link">
                                 <i className="bi bi-layout-text-window-reverse"></i>
                                 <span>Pisos</span>
-                            </a>
+                            </NavLink>
                         </li>
 
-                        <li className={`sidebar-item ${paginaActual === "apartamentos" ? "active" : ""}`}>
-                            <a href="#" className="sidebar-link" onClick={(e) => { e.preventDefault(); setPagina("apartamentos"); }}>
+                        <li className={itemClass("/apartamentos")}>
+                            <NavLink to="/apartamentos" className="sidebar-link">
                                 <i className="bi bi-house-fill"></i>
                                 <span>Apartamentos</span>
-                            </a>
+                            </NavLink>
                         </li>
 
-                        <li className={`sidebar-item ${paginaActual === "carritos" ? "active" : ""}`}>
-                            <a href="#" className="sidebar-link" onClick={(e) => { e.preventDefault(); setPagina("carritos"); }}>
+                        <li className={itemClass("/carritos")}>
+                            <NavLink to="/carritos" className="sidebar-link">
                                 <i className="bi bi-cart-fill"></i>
                                 <span>Carritos</span>
-                            </a>
+                            </NavLink>
                         </li>
 
-                        <li className={`sidebar-item ${paginaActual === "config" ? "active" : ""}`}>
-                            <a href="#" className="sidebar-link" onClick={(e) => { e.preventDefault(); setPagina("config"); }}>
+                        <li className={itemClass("/config")}>
+                            <NavLink to="/config" className="sidebar-link">
                                 <i className="bi bi-gear-fill"></i>
                                 <span>Configuración</span>
-                            </a>
+                            </NavLink>
                         </li>
 
                         <li className="sidebar-item">
-                            <a href="#" onClick={(e) => { e.preventDefault(); onLogout(); }} className="sidebar-link text-danger">
+                            <a
+                                href="#"
+                                onClick={(e) => { e.preventDefault(); onLogout(); }}
+                                className="sidebar-link text-danger"
+                            >
                                 <i className="bi bi-box-arrow-right text-danger"></i>
                                 <span>Cerrar Sesión</span>
                             </a>

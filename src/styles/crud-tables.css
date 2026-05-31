@@ -1,0 +1,21 @@
+.crud-table tbody.crud-table-body tr {
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.crud-table tbody.crud-table-body tr:hover {
+    background-color: rgba(13, 110, 253, 0.04);
+    box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+
+.crud-table tbody.crud-table-body td {
+    padding: 1rem 1.25rem;
+    vertical-align: middle;
+}
+
+.crud-table thead th {
+    font-weight: 600;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--bs-secondary-color);
+}
