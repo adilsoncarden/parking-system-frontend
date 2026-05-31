@@ -3,9 +3,9 @@ import apiService from "./api";
 const BASE = "/api/prestamos-carrito";
 
 const toBackend = ({ fechaPrestamo, fechaDevolucion, estado, carritoId, usuarioId }) => ({
-    fechaPrestamo,
+    fechaPrestamo: fechaPrestamo || null,
     fechaDevolucion: fechaDevolucion || null,
-    estado,
+    estado: estado || null,
     carritoId: Number(carritoId),
     usuarioId: Number(usuarioId),
 });
@@ -38,17 +38,14 @@ export const prestamoCarritoService = {
         await apiService.delete(`${BASE}/${id}/delete`);
     },
 
-    registrarDevolucion: async (prestamo) => {
-        const now = new Date();
-        const pad = (n) => String(n).padStart(2, "0");
-        const fechaDevolucion = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-        return prestamoCarritoService.update(prestamo.id, {
-            fechaPrestamo: prestamo.fechaPrestamo,
-            fechaDevolucion,
-            estado: "FINALIZADO",
-            carritoId: prestamo.carritoId,
-            usuarioId: prestamo.usuarioId,
-        });
+    devolver: async (id) => {
+        const res = await apiService.post(`${BASE}/${id}/devolver`);
+        return res.data;
+    },
+
+    marcarPagado: async (id) => {
+        const res = await apiService.patch(`${BASE}/${id}/pagar`);
+        return res.data;
     },
 };
 
@@ -64,4 +61,12 @@ export const formatDateTime = (value) => {
         dateStyle: "short",
         timeStyle: "short",
     });
+};
+
+export const formatMoney = (value) => {
+    if (value == null) return "—";
+    return new Intl.NumberFormat("es-PE", {
+        style: "currency",
+        currency: "PEN",
+    }).format(Number(value));
 };

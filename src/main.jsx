@@ -11,6 +11,8 @@ import "/public/assets/compiled/css/iconly.css";
 import "./styles/variables.css";
 import "./styles/responsive.css";
 import "./styles/crud-tables.css";
+import "./styles/login.css";
+import "./styles/dark-theme.css";
 
 
 ReactDOM.createRoot(document.getElementById("root")).render(

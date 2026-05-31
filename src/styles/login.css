@@ -1,0 +1,98 @@
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background: linear-gradient(135deg, #435ebe 0%, #6c8ef5 45%, #25396f 100%);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 1.5rem 3rem rgba(15, 23, 42, 0.2);
+}
+
+.login-brand {
+    color: #435ebe;
+    letter-spacing: -0.02em;
+}
+
+.login-brand-icon {
+    font-size: 2rem;
+    color: #435ebe;
+}
+
+.login-subtitle {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.login-input-group .input-group-text {
+    background: #f8f9fc;
+    border-color: #dee2e6;
+}
+
+.login-input-group .form-control {
+    border-color: #dee2e6;
+}
+
+.login-input-group .form-control:focus {
+    border-color: #435ebe;
+    box-shadow: 0 0 0 0.2rem rgba(67, 94, 190, 0.15);
+}
+
+.login-toggle-password {
+    cursor: pointer;
+    background: #f8f9fc;
+    border-color: #dee2e6;
+}
+
+.login-submit-btn {
+    background: #435ebe;
+    border-color: #435ebe;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+}
+
+.login-submit-btn:hover:not(:disabled) {
+    background: #364b9a;
+    border-color: #364b9a;
+}
+
+html[data-bs-theme="dark"] .login-page {
+    background: linear-gradient(135deg, #1a1f3b 0%, #252b48 50%, #0f1117 100%);
+}
+
+html[data-bs-theme="dark"] .login-card {
+    background: #1e2139;
+    box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.45);
+}
+
+html[data-bs-theme="dark"] .login-brand,
+html[data-bs-theme="dark"] .login-brand-icon {
+    color: #8da2fb;
+}
+
+html[data-bs-theme="dark"] .login-subtitle {
+    color: #adb5bd;
+}
+
+html[data-bs-theme="dark"] .login-input-group .input-group-text,
+html[data-bs-theme="dark"] .login-toggle-password {
+    background: #252b48;
+    border-color: #3d4466;
+    color: #e9ecef;
+}
+
+html[data-bs-theme="dark"] .login-input-group .form-control {
+    background: #1a1f3b;
+    border-color: #3d4466;
+    color: #f1f3f5;
+}
+
+html[data-bs-theme="dark"] .login-input-group .form-control::placeholder {
+    color: #868e96;
+}
