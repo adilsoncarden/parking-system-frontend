@@ -3,19 +3,16 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 
 // ── services ─────────────────────────────────────────
 import { authService } from "./services/authService";
+import { AUTH_SESSION_EXPIRED_EVENT, resetSessionExpiredFlag } from "./services/api";
 
 // ── shared ──────────────────────────────────────────
 import LoginForm from "./components/shared/LoginForm";
 import Sidebar   from "./components/shared/Sidebar";
 import Dashboard from "./components/shared/Dashboard";
 
-// ── condominios ──────────────────────────────────────
-import CondominiosPage from "./components/condominios/CondominiosPage";
-
-// ── torres ───────────────────────────────────────────
-import TorresPage from "./components/torres/TorresPage";
-
 // ── infraestructura ───────────────────────────────────
+import CondominiosPage  from "./components/infraestructura/CondominiosPage";
+import TorresPage       from "./components/infraestructura/TorresPage";
 import PisosPage        from "./components/infraestructura/PisosPage";
 import ApartamentosPage from "./components/infraestructura/ApartamentosPage";
 
@@ -90,7 +87,7 @@ function PrivateLayoutInner({ onLogout, children }) {
 // Ruta protegida — bloquea acceso si no hay sesión
 // ═══════════════════════════════════════════════════════
 function ProtectedRoute({ isAuthenticated, children }) {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !authService.isAuthenticated()) {
         return <Navigate to="/login" replace />;
     }
     return children;
@@ -125,13 +122,22 @@ function AppContent() {
 
     // Sincroniza si el localStorage cambia desde otra pestaña
     useEffect(() => {
-        const handler = () => setIsAuthenticated(authService.isAuthenticated());
-        window.addEventListener("storage", handler);
-        return () => window.removeEventListener("storage", handler);
-    }, []);
+        const onStorage = () => setIsAuthenticated(authService.isAuthenticated());
+        const onSessionExpired = () => {
+            authService.logout();
+            setIsAuthenticated(false);
+            navigate("/login", { replace: true });
+        };
+        window.addEventListener("storage", onStorage);
+        window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
+        return () => {
+            window.removeEventListener("storage", onStorage);
+            window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
+        };
+    }, [navigate]);
 
     const handleLogin = () => {
-        // El authService ya guardó token y user en localStorage
+        resetSessionExpiredFlag();
         setIsAuthenticated(true);
         navigate("/dashboard");
     };

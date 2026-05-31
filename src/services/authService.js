@@ -1,17 +1,22 @@
-import apiService from "./api";
+import apiService, { resetSessionExpiredFlag } from "./api";
 
 export const authService = {
 
     login: async ({ username, password }) => {
         try {
-            const response = await apiService.post("/api/auth/login", { email: username, password });
+            const response = await apiService.post(
+                "/api/auth/login",
+                { email: username, password },
+                { skipAuth: true }
+            );
             const { token, usuario } = response.data;
 
             if (!token) {
                 return { ok: false, error: "El servidor no devolvió un token" };
             }
 
-            localStorage.setItem("token", token);
+            resetSessionExpiredFlag();
+            localStorage.setItem("token", String(token).trim());
             localStorage.setItem("user", JSON.stringify(usuario || { username }));
             localStorage.setItem("isAuthenticated", "true");
 
@@ -37,12 +42,16 @@ export const authService = {
         localStorage.removeItem("isAuthenticated");
     },
 
-    getToken: () => localStorage.getItem("token"),
+    getToken: () => {
+        const raw = localStorage.getItem("token");
+        if (!raw || raw === "null" || raw === "undefined") return null;
+        return raw.trim();
+    },
 
     getCurrentUser: () => {
         const raw = localStorage.getItem("user");
         return raw ? JSON.parse(raw) : null;
     },
 
-    isAuthenticated: () => !!localStorage.getItem("token"),
+    isAuthenticated: () => !!authService.getToken(),
 };

@@ -28,7 +28,7 @@ const CarritosPage = () => {
             // armamos uno simple con el número de apartamento.
             const conPropietario = apartamentosData.map(a => ({
                 ...a,
-                propietario: a.propietario || `Residente ${a.numero_apartamento}`,
+                propietario: a.propietario || `Residente ${a.numero}`,
             }));
             setApartamentos(conPropietario);
             setLoading(false);
@@ -74,7 +74,7 @@ const CarritosPage = () => {
             id_carrito: carritoSeleccionado.id,
             nombre_carrito: carritoSeleccionado.nombre,
             id_apartamento: apto.id,
-            numero_apartamento: apto.numero_apartamento,
+            numero: apto.numero,
             propietario: apto.propietario,
             hora_inicio: new Date(),
             estado: 'activo',
@@ -152,7 +152,7 @@ const CarritosPage = () => {
                                         <h5 className="fw-bold">{carrito.nombre}</h5>
                                         <p className="text-muted small mb-3">
                                             {ocupado
-                                                ? `En uso: Depa ${ocupado.numero_apartamento}`
+                                                ? `En uso: Depa ${ocupado.numero}`
                                                 : 'Listo para ser asignado a un residente.'}
                                         </p>
                                         <button
@@ -206,7 +206,7 @@ const CarritosPage = () => {
                                         prestamosActivos.map(p => (
                                             <tr key={p.id}>
                                                 <td><i className="bi bi-cart-fill text-primary me-1"></i>{p.nombre_carrito}</td>
-                                                <td>Depa {p.numero_apartamento}</td>
+                                                <td>Depa {p.numero}</td>
                                                 <td>{p.propietario}</td>
                                                 <td>
                                                     <span className={`badge ${estaMultado(p.hora_inicio) ? 'bg-danger' : 'bg-warning text-dark'}`}>
@@ -257,7 +257,7 @@ const CarritosPage = () => {
                                         {historial.map(p => (
                                             <tr key={p.id}>
                                                 <td>{p.nombre_carrito}</td>
-                                                <td>Depa {p.numero_apartamento}</td>
+                                                <td>Depa {p.numero}</td>
                                                 <td>{p.propietario}</td>
                                                 <td><span className="badge bg-secondary">Devuelto</span></td>
                                             </tr>
@@ -297,7 +297,7 @@ const CarritosPage = () => {
                                         <option value="">-- Seleccionar apartamento --</option>
                                         {apartamentos.map(a => (
                                             <option key={a.id} value={a.id}>
-                                                Depa {a.numero_apartamento} — {a.propietario}
+                                                Depa {a.numero} — {a.propietario}
                                             </option>
                                         ))}
                                     </select>

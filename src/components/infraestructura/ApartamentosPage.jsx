@@ -1,32 +1,55 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from "react";
 import { apartamentoService } from "../../services/apartamentoService";
 import { pisoService } from "../../services/pisoService";
 import { torreService } from "../../services/torreService";
 import { condominioService } from "../../services/condominioService";
+import { getApiErrorMessage } from "../../services/api";
+import CrudPageLayout from "./crud/CrudPageLayout";
+import CrudTableCard from "./crud/CrudTableCard";
+import CrudModal from "./crud/CrudModal";
+import FormField from "./crud/FormField";
+import EstadoBadge from "./crud/EstadoBadge";
+import RowActions from "./crud/RowActions";
+import { usePagination } from "../../hooks/usePagination";
+
+const EMPTY_FORM = {
+    numero: "",
+    area: "",
+    condominioId: "",
+    torreId: "",
+    pisoId: "",
+    estado: "DISPONIBLE",
+};
+
+const COLUMNS = [
+    { key: "idx", label: "#" },
+    { key: "numero", label: "Apartamento" },
+    { key: "area", label: "Área (m²)" },
+    { key: "piso", label: "Piso" },
+    { key: "torre", label: "Torre" },
+    { key: "condominio", label: "Condominio" },
+    { key: "estado", label: "Estado" },
+    { key: "actions", label: "Acciones", className: "text-end" },
+];
 
 const ApartamentosPage = () => {
-    const [apartamentos, setApartamentos] = useState([]);
+    const [items, setItems] = useState([]);
     const [pisos, setPisos] = useState([]);
     const [torres, setTorres] = useState([]);
     const [condominios, setCondominios] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [filtering, setFiltering] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [pageError, setPageError] = useState('');
-
-    const [filtroPiso, setFiltroPiso] = useState('');
+    const [pageError, setPageError] = useState("");
+    const [success, setSuccess] = useState("");
+    const [filtroPisoId, setFiltroPisoId] = useState("");
     const [showModal, setShowModal] = useState(false);
-    const [modoEdicion, setModoEdicion] = useState(false);
-    const [apartamentoSeleccionado, setApartamentoSeleccionado] = useState(null);
-    const [form, setForm] = useState({
-        numero_apartamento: '',
-        id_condominio: '',
-        id_torre: '',
-        id_piso: '',
-        estado: 'DISPONIBLE',
-    });
-    const [error, setError] = useState('');
+    const [editMode, setEditMode] = useState(false);
+    const [selected, setSelected] = useState(null);
+    const [form, setForm] = useState(EMPTY_FORM);
+    const [modalError, setModalError] = useState("");
 
-    const cargarCatalogos = async () => {
+    const loadCatalogos = async () => {
         const [pisosData, torresData, condosData] = await Promise.all([
             pisoService.getAll(),
             torreService.getAll(),
@@ -37,375 +60,289 @@ const ApartamentosPage = () => {
         setCondominios(condosData);
     };
 
-    const cargarApartamentos = async (pisoId = filtroPiso) => {
+    const loadItems = async (pisoId = filtroPisoId) => {
         const data = await apartamentoService.getAll(pisoId || undefined);
-        setApartamentos(data);
+        setItems(data);
     };
 
     useEffect(() => {
-        const init = async () => {
+        (async () => {
             try {
-                setPageError('');
-                await Promise.all([cargarCatalogos(), cargarApartamentos()]);
+                setPageError("");
+                await loadCatalogos();
+                await loadItems();
             } catch (err) {
-                setPageError(err.forbidden ? err.message : 'Error al cargar apartamentos');
+                setPageError(getApiErrorMessage(err, "Error al cargar apartamentos"));
             } finally {
                 setLoading(false);
             }
-        };
-        init();
+        })();
     }, []);
 
     useEffect(() => {
         if (loading) return;
-        const filtrar = async () => {
+        (async () => {
+            setFiltering(true);
             try {
-                await cargarApartamentos(filtroPiso);
+                await loadItems(filtroPisoId);
             } catch (err) {
-                setPageError(err.forbidden ? err.message : 'Error al filtrar apartamentos');
+                setPageError(getApiErrorMessage(err, "Error al filtrar apartamentos"));
+            } finally {
+                setFiltering(false);
             }
-        };
-        filtrar();
-    }, [filtroPiso]);
+        })();
+    }, [filtroPisoId]);
 
-    const torresFiltradasForm = useMemo(() => {
-        if (!form.id_condominio) return torres;
-        return torres.filter(t => t.id_condominio === parseInt(form.id_condominio, 10));
-    }, [torres, form.id_condominio]);
+    const torresForm = useMemo(() => {
+        if (!form.condominioId) return torres;
+        return torres.filter((t) => t.condominioId === Number(form.condominioId));
+    }, [torres, form.condominioId]);
 
-    const pisosFiltradosForm = useMemo(() => {
-        if (!form.id_torre) return [];
-        return pisos.filter(p => p.id_torre === parseInt(form.id_torre, 10));
-    }, [pisos, form.id_torre]);
+    const pisosForm = useMemo(() => {
+        if (!form.torreId) return [];
+        return pisos.filter((p) => p.torreId === Number(form.torreId));
+    }, [pisos, form.torreId]);
 
-    const getPisoInfo = (id_piso) => {
-        const piso = pisos.find(p => p.id === id_piso);
-        if (!piso) return { numero: '-', torre: '-', condominio: '-' };
-        const torre = torres.find(t => t.id === piso.id_torre);
-        const condo = torre ? condominios.find(c => c.id === torre.id_condominio) : null;
-        return {
-            numero: piso.numero_piso,
-            torre: torre ? torre.nombre : '-',
-            condominio: condo ? condo.nombre : '-',
-        };
-    };
-
-    const abrirModalAgregar = () => {
-        setModoEdicion(false);
-        setForm({
-            numero_apartamento: '',
-            id_condominio: '',
-            id_torre: '',
-            id_piso: '',
-            estado: 'DISPONIBLE',
-        });
-        setError('');
+    const openCreate = () => {
+        setEditMode(false);
+        setSelected(null);
+        setForm(EMPTY_FORM);
+        setModalError("");
         setShowModal(true);
     };
 
-    const abrirModalEditar = (apto) => {
-        const piso = pisos.find(p => p.id === apto.id_piso);
-        const torre = piso ? torres.find(t => t.id === piso.id_torre) : null;
-        setModoEdicion(true);
-        setApartamentoSeleccionado(apto);
+    const openEdit = (item) => {
+        const piso = pisos.find((p) => p.id === item.pisoId);
+        const torre = piso ? torres.find((t) => t.id === piso.torreId) : null;
+        setEditMode(true);
+        setSelected(item);
         setForm({
-            numero_apartamento: apto.numero_apartamento,
-            id_condominio: torre?.id_condominio || '',
-            id_torre: piso?.id_torre || '',
-            id_piso: apto.id_piso,
-            estado: apto.estado || 'DISPONIBLE',
+            numero: item.numero || "",
+            area: item.area ?? "",
+            condominioId: torre?.condominioId || item.condominioId || "",
+            torreId: piso?.torreId || item.torreId || "",
+            pisoId: item.pisoId || "",
+            estado: item.estado || "DISPONIBLE",
         });
-        setError('');
+        setModalError("");
         setShowModal(true);
     };
 
-    const cerrarModal = () => {
+    const closeModal = () => {
         setShowModal(false);
-        setError('');
+        setModalError("");
     };
 
-    const handleCondominioChange = (id_condominio) => {
-        setForm(prev => ({
-            ...prev,
-            id_condominio,
-            id_torre: '',
-            id_piso: '',
-        }));
+    const handleCondominioChange = (condominioId) => {
+        setForm((prev) => ({ ...prev, condominioId, torreId: "", pisoId: "" }));
     };
 
-    const handleTorreChange = (id_torre) => {
-        setForm(prev => ({
-            ...prev,
-            id_torre,
-            id_piso: '',
-        }));
+    const handleTorreChange = (torreId) => {
+        setForm((prev) => ({ ...prev, torreId, pisoId: "" }));
     };
 
-    const handleGuardar = async () => {
-        if (!form.numero_apartamento?.trim() || !form.id_piso) {
-            setError('Por favor completa todos los campos.');
+    const handleSave = async () => {
+        if (!form.condominioId || !form.torreId || !form.pisoId || !form.numero.trim()) {
+            setModalError("Completa condominio, torre, piso y número.");
             return;
         }
-
+        if (form.area !== "" && (Number.isNaN(Number(form.area)) || Number(form.area) <= 0)) {
+            setModalError("El área debe ser un número positivo.");
+            return;
+        }
+        setSaving(true);
+        setModalError("");
+        setSuccess("");
         const payload = {
-            numero_apartamento: form.numero_apartamento.trim(),
-            id_piso: parseInt(form.id_piso, 10),
+            numero: form.numero.trim(),
+            pisoId: form.pisoId,
+            area: form.area,
             estado: form.estado,
         };
-
-        setSaving(true);
-        setError('');
         try {
-            if (modoEdicion) {
-                await apartamentoService.update(apartamentoSeleccionado.id, payload);
+            if (editMode) {
+                await apartamentoService.update(selected.id, payload);
+                setSuccess("Apartamento actualizado correctamente.");
             } else {
                 await apartamentoService.create(payload);
+                setSuccess("Apartamento creado correctamente.");
             }
-            await cargarApartamentos();
-            cerrarModal();
+            await Promise.all([loadCatalogos(), loadItems(filtroPisoId)]);
+            closeModal();
         } catch (err) {
-            setError(err.forbidden ? err.message : 'Error al guardar el apartamento');
+            setModalError(getApiErrorMessage(err, "Error al guardar"));
         } finally {
             setSaving(false);
         }
     };
 
-    const handleEliminar = async (id) => {
-        if (!window.confirm('¿Estás seguro de eliminar este apartamento?')) return;
+    const handleDelete = async (item) => {
+        if (!window.confirm(`¿Eliminar el apartamento ${item.numero}?`)) return;
         setSaving(true);
+        setSuccess("");
         try {
-            await apartamentoService.delete(id);
-            await cargarApartamentos();
+            await apartamentoService.delete(item.id);
+            await loadItems(filtroPisoId);
+            setSuccess("Apartamento eliminado correctamente.");
         } catch (err) {
-            setPageError(err.forbidden ? err.message : 'Error al eliminar el apartamento');
+            setPageError(getApiErrorMessage(err, "Error al eliminar"));
         } finally {
             setSaving(false);
         }
     };
 
-    if (loading) {
-        return (
-            <div className="page-heading">
-                <div className="text-center py-5">
-                    <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Cargando...</span>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    const getCondominioNombre = (condominioId) =>
+        condominios.find((c) => c.id === condominioId)?.nombre || "—";
+
+    const filter = (
+        <select
+            className="form-select form-select-sm"
+            style={{ width: "220px" }}
+            value={filtroPisoId}
+            onChange={(e) => setFiltroPisoId(e.target.value)}
+        >
+            <option value="">Todos los pisos</option>
+            {pisos.map((p) => (
+                <option key={p.id} value={p.id}>
+                    Piso {p.numero} — {p.torreNombre || torres.find((t) => t.id === p.torreId)?.nombre}
+                </option>
+            ))}
+        </select>
+    );
+
+    const pagination = usePagination(items);
+
+    const rows = pagination.paginatedItems.map((item, index) => (
+        <tr key={item.id}>
+            <td className="px-4 py-3">{pagination.rowIndex(index)}</td>
+            <td className="fw-semibold px-4 py-3">{item.numero}</td>
+            <td className="px-4 py-3">{item.area != null ? item.area : "—"}</td>
+            <td className="px-4 py-3">Piso {item.pisoNumero ?? pisos.find((p) => p.id === item.pisoId)?.numero ?? "—"}</td>
+            <td className="px-4 py-3">{item.torreNombre || "—"}</td>
+            <td className="px-4 py-3">{getCondominioNombre(item.condominioId)}</td>
+            <td className="px-4 py-3"><EstadoBadge estado={item.estado} /></td>
+            <RowActions
+                onEdit={() => openEdit(item)}
+                onDelete={() => handleDelete(item)}
+                saving={saving}
+            />
+        </tr>
+    ));
 
     return (
-        <div className="page-heading">
-            <div className="page-title">
-                <div className="row">
-                    <div className="col-12 col-md-6 order-md-1 order-last">
-                        <h3>Gestión de Apartamentos</h3>
-                        <p className="text-subtitle text-muted">
-                            Administra las unidades residenciales de cada piso
-                        </p>
-                    </div>
-                </div>
-            </div>
+        <CrudPageLayout
+            loading={loading}
+            title="Gestión de Apartamentos"
+            subtitle="Administra las unidades residenciales de cada piso"
+            pageError={pageError}
+            success={success}
+            onDismissError={() => setPageError("")}
+            onDismissSuccess={() => setSuccess("")}
+        >
+            <CrudTableCard
+                title="Listado de Apartamentos"
+                filter={filter}
+                onAdd={openCreate}
+                addLabel="Agregar Apartamento"
+                filtering={filtering}
+                saving={saving}
+                columns={COLUMNS}
+                colSpan={COLUMNS.length}
+                emptyMessage="No hay apartamentos registrados"
+                rows={rows}
+                pagination={pagination}
+            />
 
-            {pageError && <div className="alert alert-danger">{pageError}</div>}
-
-            <section className="section">
-                <div className="card shadow-sm">
-                    <div className="card-header d-flex justify-content-between align-items-center">
-                        <div className="d-flex align-items-center gap-3">
-                            <h5 className="mb-0">Listado de Unidades</h5>
-                            <select
-                                className="form-select form-select-sm"
-                                style={{ width: '220px' }}
-                                value={filtroPiso}
-                                onChange={e => setFiltroPiso(e.target.value)}
-                            >
-                                <option value="">Todos los pisos</option>
-                                {pisos.map(p => (
-                                    <option key={p.id} value={p.id}>
-                                        Piso {p.numero_piso} - {p.torreNombre || torres.find(t => t.id === p.id_torre)?.nombre}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <button className="btn btn-primary btn-sm" onClick={abrirModalAgregar}>
-                            <i className="bi bi-plus-lg me-1"></i> Agregar Apartamento
-                        </button>
-                    </div>
-                    <div className="card-body">
-                        <div className="table-responsive">
-                            <table className="table table-hover table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Apartamento</th>
-                                        <th>Piso</th>
-                                        <th>Torre</th>
-                                        <th>Condominio</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {apartamentos.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="7" className="text-center text-muted py-4">
-                                                No hay apartamentos registrados en este criterio
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        apartamentos.map((apto, index) => {
-                                            const info = getPisoInfo(apto.id_piso);
-                                            return (
-                                                <tr key={apto.id}>
-                                                    <td>{index + 1}</td>
-                                                    <td>
-                                                        <span className="fw-bold text-primary">
-                                                            <i className="bi bi-door-open-fill me-1"></i>
-                                                            Depa {apto.numero_apartamento}
-                                                        </span>
-                                                    </td>
-                                                    <td>Piso {apto.pisoNumero ?? info.numero}</td>
-                                                    <td>{apto.torreNombre || info.torre}</td>
-                                                    <td>{info.condominio}</td>
-                                                    <td>
-                                                        <span className={`badge ${
-                                                            apto.estado === 'DISPONIBLE' ? 'bg-success' :
-                                                            apto.estado === 'OCUPADO' ? 'bg-warning text-dark' : 'bg-secondary'
-                                                        }`}>
-                                                            {apto.estado}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <button
-                                                            className="btn btn-sm btn-warning me-2"
-                                                            onClick={() => abrirModalEditar(apto)}
-                                                        >
-                                                            <i className="bi bi-pencil-fill"></i>
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-sm btn-danger"
-                                                            onClick={() => handleEliminar(apto.id)}
-                                                            disabled={saving}
-                                                        >
-                                                            <i className="bi bi-trash-fill"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {showModal && (
-                <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                    <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content">
-                            <div className="modal-header bg-primary text-white">
-                                <h5 className="modal-title">
-                                    {modoEdicion ? 'Editar Apartamento' : 'Nuevo Apartamento'}
-                                </h5>
-                                <button className="btn-close btn-close-white" onClick={cerrarModal} disabled={saving}></button>
-                            </div>
-                            <div className="modal-body">
-                                {error && (
-                                    <div className="alert alert-danger py-2 small">{error}</div>
-                                )}
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Condominio</label>
-                                    <select
-                                        className="form-select"
-                                        value={form.id_condominio}
-                                        onChange={e => handleCondominioChange(e.target.value)}
-                                        disabled={saving}
-                                    >
-                                        <option value="">Selecciona condominio</option>
-                                        {condominios.map(c => (
-                                            <option key={c.id} value={c.id}>{c.nombre}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Torre</label>
-                                    <select
-                                        className="form-select"
-                                        value={form.id_torre}
-                                        onChange={e => handleTorreChange(e.target.value)}
-                                        disabled={saving || !form.id_condominio}
-                                    >
-                                        <option value="">Selecciona torre</option>
-                                        {torresFiltradasForm.map(t => (
-                                            <option key={t.id} value={t.id}>{t.nombre}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Piso</label>
-                                    <select
-                                        className="form-select"
-                                        value={form.id_piso}
-                                        onChange={e => setForm({ ...form, id_piso: e.target.value })}
-                                        disabled={saving || !form.id_torre}
-                                    >
-                                        <option value="">Selecciona el piso</option>
-                                        {pisosFiltradosForm.map(p => (
-                                            <option key={p.id} value={p.id}>
-                                                Piso {p.numero_piso}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Número de Apartamento</label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        placeholder="Ej: 201"
-                                        value={form.numero_apartamento}
-                                        onChange={e => setForm({ ...form, numero_apartamento: e.target.value })}
-                                        disabled={saving}
-                                    />
-                                </div>
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Estado</label>
-                                    <select
-                                        className="form-select"
-                                        value={form.estado}
-                                        onChange={e => setForm({ ...form, estado: e.target.value })}
-                                        disabled={saving}
-                                    >
-                                        <option value="DISPONIBLE">Disponible</option>
-                                        <option value="OCUPADO">Ocupado</option>
-                                        <option value="INACTIVO">Inactivo</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="modal-footer">
-                                <button className="btn btn-light" onClick={cerrarModal} disabled={saving}>
-                                    Cancelar
-                                </button>
-                                <button className="btn btn-primary" onClick={handleGuardar} disabled={saving}>
-                                    {saving ? (
-                                        <>
-                                            <span className="spinner-border spinner-border-sm me-2"></span>
-                                            Guardando...
-                                        </>
-                                    ) : (
-                                        modoEdicion ? 'Actualizar' : 'Registrar'
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+            <CrudModal
+                show={showModal}
+                title={editMode ? "Editar Apartamento" : "Agregar Apartamento"}
+                error={modalError}
+                saving={saving}
+                onClose={closeModal}
+                onSave={handleSave}
+                editMode={editMode}
+            >
+                <FormField label="Condominio" required>
+                    <select
+                        className="form-select"
+                        value={form.condominioId}
+                        onChange={(e) => handleCondominioChange(e.target.value)}
+                        disabled={saving}
+                    >
+                        <option value="">Selecciona un condominio</option>
+                        {condominios.map((c) => (
+                            <option key={c.id} value={c.id}>
+                                {c.nombre}
+                            </option>
+                        ))}
+                    </select>
+                </FormField>
+                <FormField label="Torre" required>
+                    <select
+                        className="form-select"
+                        value={form.torreId}
+                        onChange={(e) => handleTorreChange(e.target.value)}
+                        disabled={saving || !form.condominioId}
+                    >
+                        <option value="">Selecciona una torre</option>
+                        {torresForm.map((t) => (
+                            <option key={t.id} value={t.id}>
+                                {t.nombre}
+                            </option>
+                        ))}
+                    </select>
+                </FormField>
+                <FormField label="Piso" required>
+                    <select
+                        className="form-select"
+                        value={form.pisoId}
+                        onChange={(e) => setForm({ ...form, pisoId: e.target.value })}
+                        disabled={saving || !form.torreId}
+                    >
+                        <option value="">Selecciona un piso</option>
+                        {pisosForm.map((p) => (
+                            <option key={p.id} value={p.id}>
+                                Piso {p.numero}
+                            </option>
+                        ))}
+                    </select>
+                </FormField>
+                <FormField label="Número" required>
+                    <input
+                        type="text"
+                        className="form-control"
+                        value={form.numero}
+                        onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                        disabled={saving}
+                    />
+                </FormField>
+                <FormField label="Área (m²)">
+                    <input
+                        type="number"
+                        className="form-control"
+                        min="0"
+                        step="0.01"
+                        placeholder="Opcional"
+                        value={form.area}
+                        onChange={(e) => setForm({ ...form, area: e.target.value })}
+                        disabled={saving}
+                    />
+                </FormField>
+                <FormField label="Estado" required>
+                    <select
+                        className="form-select"
+                        value={form.estado}
+                        onChange={(e) => setForm({ ...form, estado: e.target.value })}
+                        disabled={saving}
+                    >
+                        <option value="DISPONIBLE">Disponible</option>
+                        <option value="OCUPADO">Ocupado</option>
+                        <option value="MANTENIMIENTO">Mantenimiento</option>
+                        <option value="INACTIVO">Inactivo</option>
+                    </select>
+                </FormField>
+            </CrudModal>
+        </CrudPageLayout>
     );
 };
 
