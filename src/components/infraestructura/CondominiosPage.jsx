@@ -6,7 +6,6 @@ import CrudPageLayout from "./crud/CrudPageLayout";
 import CrudTableCard from "./crud/CrudTableCard";
 import CrudModal from "./crud/CrudModal";
 import FormField from "./crud/FormField";
-import EstadoBadge from "./crud/EstadoBadge";
 import RowActions from "./crud/RowActions";
 import { usePagination } from "../../hooks/usePagination";
 import { useModulePermissions } from "../../hooks/useModulePermissions";
@@ -16,7 +15,6 @@ const EMPTY_FORM = {
     direccion: "",
     telefono: "",
     email: "",
-    estado: "ACTIVO",
 };
 const MAX_TELEFONO = 9;
 
@@ -26,7 +24,6 @@ const COLUMNS = [
     { key: "direccion", label: "Dirección" },
     { key: "telefono", label: "Teléfono" },
     { key: "email", label: "Email" },
-    { key: "estado", label: "Estado" },
     { key: "actions", label: "Acciones" },
 ];
 
@@ -97,7 +94,6 @@ const CondominiosPage = () => {
             direccion: item.direccion || "",
             telefono: limitTelefono(item.telefono || ""),
             email: item.email || "",
-            estado: item.estado || "ACTIVO",
         });
         setModalError("");
         setShowModal(true);
@@ -207,9 +203,6 @@ const CondominiosPage = () => {
             <td className="px-4 py-3">{item.direccion}</td>
             <td className="px-4 py-3">{item.telefono || "—"}</td>
             <td className="px-4 py-3">{item.email || "—"}</td>
-            <td className="px-4 py-3">
-                <EstadoBadge estado={item.estado} />
-            </td>
             <RowActions
                 onEdit={() => openEdit(item)}
                 onDelete={() => handleDelete(item)}
@@ -299,19 +292,6 @@ const CondominiosPage = () => {
                         }
                         disabled={saving}
                     />
-                </FormField>
-                <FormField label="Estado" required>
-                    <select
-                        className="form-select"
-                        value={form.estado}
-                        onChange={(e) =>
-                            setForm({ ...form, estado: e.target.value })
-                        }
-                        disabled={saving}
-                    >
-                        <option value="ACTIVO">Activo</option>
-                        <option value="INACTIVO">Inactivo</option>
-                    </select>
                 </FormField>
             </CrudModal>
         </CrudPageLayout>
