@@ -1,4 +1,4 @@
-import apiService, { resetSessionExpiredFlag } from "./api";
+import apiService, { applyAuthToken, clearAuthToken, resetSessionExpiredFlag } from "./api";
 import { clearStoredPermisos, setStoredPermisos } from "../utils/permissions";
 
 export const authService = {
@@ -18,6 +18,7 @@ export const authService = {
 
             resetSessionExpiredFlag();
             const normalizedToken = String(token).trim();
+            applyAuthToken(normalizedToken);
             localStorage.setItem("token", normalizedToken);
             localStorage.setItem("user", JSON.stringify(usuario || { email }));
             localStorage.setItem("isAuthenticated", "true");
@@ -46,6 +47,7 @@ export const authService = {
     },
 
     logout: () => {
+        clearAuthToken();
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         localStorage.removeItem("isAuthenticated");

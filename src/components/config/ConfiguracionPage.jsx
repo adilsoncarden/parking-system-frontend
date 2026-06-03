@@ -346,24 +346,29 @@ const ConfiguracionPage = () => {
         [apartamentos],
     );
 
-    const load = async () => {
-        const [usuarios, rolesData, aptos] = await Promise.all([
-            usuarioService.getAll(),
-            rolService.getAll(),
-            apartamentoService.getAll(),
-        ]);
-        setItems(usuarios);
-        setRoles(rolesData);
-        setApartamentos(aptos);
-    };
-
     useEffect(() => {
         (async () => {
             try {
                 setPageError("");
-                await load();
+                const [usuariosRes, rolesRes, aptosRes] = await Promise.allSettled([
+                    usuarioService.getAll(),
+                    rolService.getAll(),
+                    apartamentoService.getAll(),
+                ]);
+
+                if (usuariosRes.status === "fulfilled") {
+                    setItems(usuariosRes.value);
+                } else {
+                    throw usuariosRes.reason;
+                }
+                if (rolesRes.status === "fulfilled") {
+                    setRoles(rolesRes.value);
+                }
+                if (aptosRes.status === "fulfilled") {
+                    setApartamentos(aptosRes.value);
+                }
             } catch (err) {
-                setPageError(getApiErrorMessage(err, "Error al cargar usuarios"));
+                setPageError(getApiErrorMessage(err, "Error al cargar configuración"));
             } finally {
                 setLoading(false);
             }
