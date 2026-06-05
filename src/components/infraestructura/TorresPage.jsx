@@ -7,18 +7,16 @@ import CrudPageLayout from "./crud/CrudPageLayout";
 import CrudTableCard from "./crud/CrudTableCard";
 import CrudModal from "./crud/CrudModal";
 import FormField from "./crud/FormField";
-import EstadoBadge from "./crud/EstadoBadge";
 import RowActions from "./crud/RowActions";
 import { usePagination } from "../../hooks/usePagination";
 import { useModulePermissions } from "../../hooks/useModulePermissions";
 
-const EMPTY_FORM = { nombre: "", condominioId: "", estado: "ACTIVO" };
+const EMPTY_FORM = { nombre: "", condominioId: "" };
 
 const COLUMNS = [
     { key: "idx", label: "#" },
     { key: "nombre", label: "Nombre" },
     { key: "condominio", label: "Condominio" },
-    { key: "estado", label: "Estado" },
     { key: "actions", label: "Acciones" },
 ];
 
@@ -226,7 +224,6 @@ const TorresPage = () => {
         setForm({
             nombre: item.nombre || "",
             condominioId: item.condominioId || "",
-            estado: item.estado || "ACTIVO",
         });
         setModalError("");
         setShowModal(true);
@@ -332,9 +329,6 @@ const TorresPage = () => {
                     getCondominioNombre(item.condominioId) ||
                     "—"}
             </td>
-            <td className="px-4 py-3">
-                <EstadoBadge estado={item.estado} />
-            </td>
             <RowActions
                 onEdit={() => openEdit(item)}
                 onDelete={() => handleDelete(item)}
@@ -407,19 +401,6 @@ const TorresPage = () => {
                         placeholder="Seleccione un condominio"
                         inputClassName="form-control"
                     />
-                </FormField>
-                <FormField label="Estado" required>
-                    <select
-                        className="form-select"
-                        value={form.estado}
-                        onChange={(e) =>
-                            setForm({ ...form, estado: e.target.value })
-                        }
-                        disabled={saving}
-                    >
-                        <option value="ACTIVO">Activo</option>
-                        <option value="INACTIVO">Inactivo</option>
-                    </select>
                 </FormField>
             </CrudModal>
         </CrudPageLayout>

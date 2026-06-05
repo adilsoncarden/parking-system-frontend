@@ -168,26 +168,28 @@ const ApartamentosPage = () => {
         [pisos, torreById],
     );
 
-    const loadCatalogos = async () => {
-        const [pisosData, torresData] = await Promise.all([
-            pisoService.getAll(),
-            torreService.getAll(),
-        ]);
-        setPisos(pisosData);
-        setTorres(torresData);
-    };
-
-    const loadItems = async () => {
-        const data = await apartamentoService.getAll();
-        setItems(data);
-    };
-
     useEffect(() => {
         (async () => {
             try {
                 setPageError("");
-                await loadCatalogos();
-                await loadItems();
+                const [pisosRes, torresRes, apartamentosRes] = await Promise.allSettled([
+                    pisoService.getAll(),
+                    torreService.getAll(),
+                    apartamentoService.getAll(),
+                ]);
+
+                if (pisosRes.status === "fulfilled") {
+                    setPisos(pisosRes.value);
+                }
+                if (torresRes.status === "fulfilled") {
+                    setTorres(torresRes.value);
+                }
+
+                if (apartamentosRes.status === "fulfilled") {
+                    setItems(apartamentosRes.value);
+                } else {
+                    throw apartamentosRes.reason;
+                }
             } catch (err) {
                 setPageError(getApiErrorMessage(err, "Error al cargar apartamentos"));
             } finally {

@@ -7,19 +7,17 @@ import CrudPageLayout from "./crud/CrudPageLayout";
 import CrudTableCard from "./crud/CrudTableCard";
 import CrudModal from "./crud/CrudModal";
 import FormField from "./crud/FormField";
-import EstadoBadge from "./crud/EstadoBadge";
 import RowActions from "./crud/RowActions";
 import { usePagination } from "../../hooks/usePagination";
 import { useModulePermissions } from "../../hooks/useModulePermissions";
 
-const EMPTY_FORM = { numero: "", torreId: "", estado: "ACTIVO" };
+const EMPTY_FORM = { numero: "", torreId: "" };
 
 const COLUMNS = [
     { key: "idx", label: "#" },
     { key: "numero", label: "Número" },
     { key: "torre", label: "Torre" },
     { key: "condominio", label: "Condominio" },
-    { key: "estado", label: "Estado" },
     { key: "actions", label: "Acciones" },
 ];
 
@@ -224,7 +222,6 @@ const PisosPage = () => {
         setForm({
             numero: item.numero ?? "",
             torreId: item.torreId || "",
-            estado: item.estado || "ACTIVO",
         });
         setModalError("");
         setShowModal(true);
@@ -254,7 +251,6 @@ const PisosPage = () => {
         const payload = {
             numero: form.numero,
             torreId: form.torreId,
-            estado: form.estado,
         };
         try {
             if (editMode) {
@@ -336,9 +332,6 @@ const PisosPage = () => {
             </td>
             <td className="px-4 py-3">{getTorreNombre(item)}</td>
             <td className="px-4 py-3">{getCondominioNombre(item)}</td>
-            <td className="px-4 py-3">
-                <EstadoBadge estado={item.estado} />
-            </td>
             <RowActions
                 onEdit={() => openEdit(item)}
                 onDelete={() => handleDelete(item)}
@@ -404,17 +397,6 @@ const PisosPage = () => {
                         onChange={(e) => setForm({ ...form, numero: e.target.value })}
                         disabled={saving}
                     />
-                </FormField>
-                <FormField label="Estado" required>
-                    <select
-                        className="form-select"
-                        value={form.estado}
-                        onChange={(e) => setForm({ ...form, estado: e.target.value })}
-                        disabled={saving}
-                    >
-                        <option value="ACTIVO">Activo</option>
-                        <option value="INACTIVO">Inactivo</option>
-                    </select>
                 </FormField>
             </CrudModal>
         </CrudPageLayout>
