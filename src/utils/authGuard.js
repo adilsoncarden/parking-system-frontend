@@ -1,26 +1,11 @@
-import { authService } from "../services/authService";
+import { getAuthToken, isJwtExpired } from "./jwt";
 
-export const getAuthToken = () => authService.getToken();
+export { getAuthToken };
 
-const isTokenExpired = (token) => {
-    try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        if (!payload?.exp) return false;
-        return payload.exp * 1000 < Date.now();
-    } catch {
-        return true;
-    }
-};
-
-/** true si hay token válido y no expirado. */
 export const isLoggedIn = () => {
     const token = getAuthToken();
     if (!token) return false;
-    if (isTokenExpired(token)) {
-        authService.logout();
-        return false;
-    }
-    return true;
+    return !isJwtExpired(token);
 };
 
 export const debugAuthToken = () => {

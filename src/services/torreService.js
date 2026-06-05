@@ -2,10 +2,9 @@ import apiService from "./api";
 
 const BASE = "/api/torres";
 
-const toBackend = ({ nombre, condominioId, estado }) => ({
+const toBackend = ({ nombre, condominioId }) => ({
     nombre: nombre?.trim(),
     condominioId: Number(condominioId),
-    estado: estado || "ACTIVO",
 });
 
 export const torreService = {

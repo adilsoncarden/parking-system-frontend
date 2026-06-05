@@ -2,18 +2,16 @@ import apiService from "./api";
 
 const BASE = "/api/condominios";
 
-const toBackend = ({ nombre, direccion, telefono, email, estado }) => ({
+const toBackend = ({ nombre, direccion, telefono, email }) => ({
     nombre: nombre?.trim(),
     direccion: direccion?.trim(),
     telefono: telefono?.trim() || null,
     email: email?.trim() || null,
-    estado: estado || "ACTIVO",
 });
 
 export const condominioService = {
-    getAll: async (estado) => {
-        const params = estado != null ? { estado } : {};
-        const res = await apiService.get(BASE, { params });
+    getAll: async () => {
+        const res = await apiService.get(BASE);
         return res.data || [];
     },
 
