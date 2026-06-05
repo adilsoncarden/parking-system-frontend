@@ -2,10 +2,9 @@ import apiService from "./api";
 
 const BASE = "/api/pisos";
 
-const toBackend = ({ numero, torreId, estado }) => ({
+const toBackend = ({ numero, torreId }) => ({
     numero: Number(numero),
     torreId: Number(torreId),
-    estado: estado || "ACTIVO",
 });
 
 export const pisoService = {
