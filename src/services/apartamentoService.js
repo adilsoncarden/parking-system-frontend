@@ -13,8 +13,10 @@ const toBackend = ({ numero, pisoId, area, estado }) => {
 };
 
 export const apartamentoService = {
-    getAll: async (pisoId) => {
-        const params = pisoId ? { pisoId } : {};
+    getAll: async (pisoId, condominioId) => {
+        const params = {};
+        if (pisoId) params.pisoId = pisoId;
+        if (condominioId) params.condominioId = condominioId;
         const res = await apiService.get(BASE, { params });
         return res.data || [];
     },
