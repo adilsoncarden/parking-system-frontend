@@ -7,7 +7,3 @@ export const isLoggedIn = () => {
     if (!token) return false;
     return !isJwtExpired(token);
 };
-
-export const debugAuthToken = () => {
-    console.log("TOKEN:", localStorage.getItem("token"));
-};

@@ -19,9 +19,27 @@ export const clearStoredPermisos = () => {
     localStorage.removeItem(STORAGE_KEY);
 };
 
+export const getCurrentUser = () => {
+    try {
+        return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+        return null;
+    }
+};
+
 export const isAdmin = () => {
-    const user = JSON.parse(localStorage.getItem("user") || "null");
-    return user?.rolNombre?.toUpperCase() === "ADMIN";
+    return getCurrentUser()?.rolNombre?.toUpperCase() === "ADMIN";
+};
+
+// Admin ligado a un único condominio (no es el superadmin global).
+export const isCondominioAdmin = () => {
+    const user = getCurrentUser();
+    return !!user && user.rolNombre?.toUpperCase() !== "ADMIN" && user.condominioId != null;
+};
+
+export const getScopedCondominioId = () => {
+    const user = getCurrentUser();
+    return isCondominioAdmin() ? user.condominioId : null;
 };
 
 export const hasPermission = (permission) => {

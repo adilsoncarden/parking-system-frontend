@@ -2,12 +2,13 @@ import apiService from "./api";
 
 const BASE = "/api/prestamos-carrito";
 
-const toBackend = ({ fechaPrestamo, fechaDevolucion, estado, carritoId, usuarioId }) => ({
+const toBackend = ({ fechaPrestamo, fechaDevolucion, estado, carritoId, usuarioId, entradaSalidaId }) => ({
     fechaPrestamo: fechaPrestamo || null,
     fechaDevolucion: fechaDevolucion || null,
     estado: estado || null,
     carritoId: Number(carritoId),
     usuarioId: Number(usuarioId),
+    entradaSalidaId: entradaSalidaId ? Number(entradaSalidaId) : null,
 });
 
 export const prestamoCarritoService = {
@@ -38,8 +39,9 @@ export const prestamoCarritoService = {
         await apiService.delete(`${BASE}/${id}/delete`);
     },
 
-    devolver: async (id) => {
-        const res = await apiService.post(`${BASE}/${id}/devolver`);
+    devolver: async (id, entradaDevolucionId) => {
+        const params = entradaDevolucionId ? { entradaDevolucionId: Number(entradaDevolucionId) } : {};
+        const res = await apiService.post(`${BASE}/${id}/devolver`, null, { params });
         return res.data;
     },
 

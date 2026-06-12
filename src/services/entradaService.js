@@ -1,22 +1,19 @@
 import apiService from "./api";
 
-const BASE = "/api/apartamentos";
+const BASE = "/api/entradas";
 
-const toBackend = ({ numero, pisoId, area, estado }) => {
-    const parsedArea = area === "" || area == null ? null : Number(area);
-    return {
-        numero: String(numero).trim(),
-        pisoId: Number(pisoId),
-        area: Number.isNaN(parsedArea) ? null : parsedArea,
-        estado: estado || "DISPONIBLE",
-    };
-};
+const toBackend = ({ nombre, capacidadCarritos, condominioId }) => ({
+    nombre: nombre?.trim(),
+    capacidadCarritos:
+        capacidadCarritos === "" || capacidadCarritos == null
+            ? null
+            : Number(capacidadCarritos),
+    condominioId: Number(condominioId),
+});
 
-export const apartamentoService = {
-    getAll: async (pisoId, condominioId) => {
-        const params = {};
-        if (pisoId) params.pisoId = pisoId;
-        if (condominioId) params.condominioId = condominioId;
+export const entradaService = {
+    getAll: async (condominioId) => {
+        const params = condominioId ? { condominioId } : {};
         const res = await apiService.get(BASE, { params });
         return res.data || [];
     },

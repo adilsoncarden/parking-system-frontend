@@ -12,13 +12,15 @@ const toBackend = (u) => ({
     estado: u.estado,
     rolId: Number(u.rolId),
     apartamentoId: u.apartamentoId ? Number(u.apartamentoId) : null,
+    condominioId: u.condominioId ? Number(u.condominioId) : null,
 });
 
 export const usuarioService = {
-    getAll: async (rolId, apartamentoId) => {
+    getAll: async (rolId, apartamentoId, condominioId) => {
         const params = {};
         if (rolId) params.rolId = rolId;
         if (apartamentoId) params.apartamentoId = apartamentoId;
+        if (condominioId) params.condominioId = condominioId;
         const res = await apiService.get(BASE, { params });
         return res.data || [];
     },

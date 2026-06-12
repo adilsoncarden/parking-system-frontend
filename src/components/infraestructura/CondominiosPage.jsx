@@ -1,53 +1,87 @@
 import { useState, useEffect, useMemo } from "react";
-import { condominioService } from "../../services/condominioService";
+import { useNavigate } from "react-router-dom";
+import { condominioResumenService } from "../../services/condominioResumenService";
 import { getApiErrorMessage } from "../../services/api";
-import { confirmAction, showSuccess, showError } from "../../utils/swalHelpers";
 import CrudPageLayout from "./crud/CrudPageLayout";
-import CrudTableCard from "./crud/CrudTableCard";
-import CrudModal from "./crud/CrudModal";
-import FormField from "./crud/FormField";
-import RowActions from "./crud/RowActions";
-import { usePagination } from "../../hooks/usePagination";
+import CondominioFormModal from "./CondominioFormModal";
 import { useModulePermissions } from "../../hooks/useModulePermissions";
+import { colorForName, initialsForName } from "../../utils/condominioVisual";
+import { imageForCondominio } from "../../utils/condominioImages";
 
-const EMPTY_FORM = {
-    nombre: "",
-    direccion: "",
-    telefono: "",
-    email: "",
+const StatItem = ({ icon, label, value, color }) => (
+    <div className="cond-stat">
+        <span className="cond-stat-chip" style={{ background: `${color}1f`, color }}>
+            <i className={`bi ${icon}`} />
+        </span>
+        <div className="lh-1">
+            <div className="cond-stat-value">{value}</div>
+            <small className="text-muted">{label}</small>
+        </div>
+    </div>
+);
+
+const CondominioCard = ({ condominio, onOpen }) => {
+    const s = condominio.stats;
+    const open = () => onOpen(condominio.id);
+    return (
+        <div
+            className="card cond-card h-100"
+            role="button"
+            tabIndex={0}
+            onClick={open}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    open();
+                }
+            }}
+        >
+            <div
+                className="cond-card-banner"
+                style={{ backgroundImage: `url(${imageForCondominio(condominio.id, condominio.nombre)})` }}
+            >
+                <i className="bi bi-arrow-right-circle-fill cond-card-go" />
+                <span
+                    className="cond-card-badge"
+                    style={{ background: colorForName(condominio.nombre) }}
+                >
+                    {initialsForName(condominio.nombre)}
+                </span>
+            </div>
+
+            <div className="card-body cond-card-body">
+                <h5 className="mb-1 text-truncate">{condominio.nombre}</h5>
+                <small className="text-muted d-block text-truncate mb-3">
+                    <i className="bi bi-geo-alt me-1" />
+                    {condominio.direccion || "Sin dirección"}
+                </small>
+
+                <div className="cond-stats">
+                    <StatItem icon="bi-building" label="Torres" value={s.torres} color="#5a8dee" />
+                    <StatItem icon="bi-layers-fill" label="Pisos" value={s.pisos} color="#ff9f43" />
+                    <StatItem icon="bi-door-open-fill" label="Apartamentos" value={s.apartamentos} color="#28c76f" />
+                    <StatItem icon="bi-cart3" label="Carritos" value={s.carritos} color="#7367f0" />
+                    <div className="cond-stats-footer">
+                        <StatItem icon="bi-people-fill" label="Residentes" value={s.residentes} color="#00cfe8" />
+                        <StatItem icon="bi-signpost-2-fill" label="Entradas" value={s.entradas} color="#ea5455" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 };
-const MAX_TELEFONO = 9;
-
-const COLUMNS = [
-    { key: "idx", label: "#" },
-    { key: "nombre", label: "Nombre" },
-    { key: "direccion", label: "Dirección" },
-    { key: "telefono", label: "Teléfono" },
-    { key: "email", label: "Email" },
-    { key: "actions", label: "Acciones" },
-];
-
-const limitTelefono = (value) =>
-    value.replace(/\D/g, "").slice(0, MAX_TELEFONO);
 
 const CondominiosPage = () => {
-    const { canCreate, canEdit, canDelete } = useModulePermissions("CONDOMINIOS");
+    const navigate = useNavigate();
+    const { canCreate } = useModulePermissions("CONDOMINIOS");
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [deletingId, setDeletingId] = useState(null);
     const [pageError, setPageError] = useState("");
     const [search, setSearch] = useState("");
     const [showModal, setShowModal] = useState(false);
-    const [editMode, setEditMode] = useState(false);
-    const [selected, setSelected] = useState(null);
-    const [form, setForm] = useState(EMPTY_FORM);
-    const [modalError, setModalError] = useState("");
 
-    const busy = saving || deletingId != null;
-
-    const load = async () => {
-        const data = await condominioService.getAll();
+    const load = async (force = false) => {
+        const data = await condominioResumenService.getResumen({ force });
         setItems(data);
     };
 
@@ -57,243 +91,79 @@ const CondominiosPage = () => {
                 setPageError("");
                 await load();
             } catch (err) {
-                setPageError(
-                    getApiErrorMessage(err, "Error al cargar condominios"),
-                );
+                setPageError(getApiErrorMessage(err, "Error al cargar condominios"));
             } finally {
                 setLoading(false);
             }
         })();
     }, []);
 
-    const filteredItems = useMemo(() => {
+    const filtered = useMemo(() => {
         const q = search.trim().toLowerCase();
         if (!q) return items;
         return items.filter(
-            (item) =>
-                (item.nombre || "").toLowerCase().includes(q) ||
-                (item.direccion || "").toLowerCase().includes(q),
+            (c) =>
+                (c.nombre || "").toLowerCase().includes(q) ||
+                (c.direccion || "").toLowerCase().includes(q),
         );
     }, [items, search]);
 
-    const pagination = usePagination(filteredItems);
-
-    const openCreate = () => {
-        setEditMode(false);
-        setSelected(null);
-        setForm(EMPTY_FORM);
-        setModalError("");
-        setShowModal(true);
-    };
-
-    const openEdit = (item) => {
-        setEditMode(true);
-        setSelected(item);
-        setForm({
-            nombre: item.nombre || "",
-            direccion: item.direccion || "",
-            telefono: limitTelefono(item.telefono || ""),
-            email: item.email || "",
-        });
-        setModalError("");
-        setShowModal(true);
-    };
-
-    const closeModal = () => {
-        if (busy) return;
+    const handleSaved = async () => {
         setShowModal(false);
-        setModalError("");
-    };
-
-    const handleTelefonoChange = (e) => {
-        setForm({ ...form, telefono: limitTelefono(e.target.value) });
-    };
-
-    const validate = () => {
-        if (!form.nombre.trim() || !form.direccion.trim()) {
-            return "Nombre y dirección son obligatorios.";
-        }
-        if (form.telefono && form.telefono.length > MAX_TELEFONO) {
-            return "El teléfono debe tener máximo 9 dígitos.";
-        }
-        if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-            return "El email no es válido.";
-        }
-        return "";
-    };
-
-    const handleSave = async () => {
-        const validation = validate();
-        if (validation) {
-            setModalError(validation);
-            return;
-        }
-        setSaving(true);
-        setModalError("");
+        condominioResumenService.invalidate();
         try {
-            if (editMode) {
-                const updated = await condominioService.update(
-                    selected.id,
-                    form,
-                );
-                setItems((prev) =>
-                    prev.map((item) =>
-                        item.id === selected.id ? updated : item,
-                    ),
-                );
-                await showSuccess("Condominio actualizado correctamente.");
-            } else {
-                const created = await condominioService.create(form);
-                setItems((prev) => [...prev, created]);
-                await showSuccess("Condominio creado correctamente.");
-            }
-            setShowModal(false);
+            await load(true);
         } catch (err) {
-            const msg = getApiErrorMessage(err, "Error al guardar");
-            setModalError(msg);
-            await showError(msg);
-        } finally {
-            setSaving(false);
+            setPageError(getApiErrorMessage(err, "Error al recargar condominios"));
         }
     };
-
-    const handleDelete = async (item) => {
-        const ok = await confirmAction({
-            title: "¿Deseas eliminar este condominio?",
-            text: item.nombre ? `"${item.nombre}"` : "",
-            confirmText: "Sí, eliminar",
-            icon: "warning",
-        });
-        if (!ok) return;
-
-        setDeletingId(item.id);
-        setPageError("");
-        try {
-            await condominioService.delete(item.id);
-            setItems((prev) => prev.filter((row) => row.id !== item.id));
-            await showSuccess("Condominio eliminado correctamente.");
-        } catch (err) {
-            const msg = getApiErrorMessage(
-                err,
-                "Error al eliminar el condominio",
-            );
-            setPageError(msg);
-            await showError(msg);
-        } finally {
-            setDeletingId(null);
-        }
-    };
-
-    const searchFilter = (
-        <input
-            type="search"
-            className="form-control form-control-sm"
-            style={{ width: "240px" }}
-            placeholder="Buscar por nombre o dirección..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            disabled={loading}
-        />
-    );
-
-    const rows = pagination.paginatedItems.map((item, index) => (
-        <tr key={item.id}>
-            <td className="px-4 py-3">{pagination.rowIndex(index)}</td>
-            <td className="fw-semibold px-4 py-3">{item.nombre}</td>
-            <td className="px-4 py-3">{item.direccion}</td>
-            <td className="px-4 py-3">{item.telefono || "—"}</td>
-            <td className="px-4 py-3">{item.email || "—"}</td>
-            <RowActions
-                onEdit={() => openEdit(item)}
-                onDelete={() => handleDelete(item)}
-                saving={busy || deletingId === item.id}
-                canEdit={canEdit}
-                canDelete={canDelete}
-            />
-        </tr>
-    ));
 
     return (
         <CrudPageLayout
             loading={loading}
             title="Gestión de Condominios"
-            subtitle="Administra los condominios registrados en el sistema"
+            subtitle="Selecciona un condominio para ver todo su detalle"
             pageError={pageError}
             onDismissError={() => setPageError("")}
         >
-            <CrudTableCard
-                title="Listado de Condominios"
-                filter={searchFilter}
-                onAdd={openCreate}
-                canAdd={canCreate}
-                addLabel="Agregar Condominio"
-                saving={busy}
-                columns={COLUMNS}
-                colSpan={COLUMNS.length}
-                emptyMessage={
-                    search.trim()
-                        ? "No hay resultados para la búsqueda"
-                        : "No hay condominios registrados"
-                }
-                rows={rows}
-                pagination={pagination}
-            />
+            <div className="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
+                <input
+                    type="search"
+                    className="form-control"
+                    style={{ maxWidth: "320px" }}
+                    placeholder="Buscar por nombre o dirección..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+                {canCreate && (
+                    <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                        <i className="bi bi-plus-lg me-1" /> Agregar Condominio
+                    </button>
+                )}
+            </div>
 
-            <CrudModal
+            {filtered.length === 0 ? (
+                <div className="text-center text-muted py-5">
+                    {search.trim()
+                        ? "No hay resultados para la búsqueda"
+                        : "No hay condominios registrados"}
+                </div>
+            ) : (
+                <div className="row g-3">
+                    {filtered.map((c) => (
+                        <div className="col-12 col-md-6 col-xl-4" key={c.id}>
+                            <CondominioCard condominio={c} onOpen={(id) => navigate(`/condominios/${id}`)} />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <CondominioFormModal
                 show={showModal}
-                title={editMode ? "Editar Condominio" : "Agregar Condominio"}
-                error={modalError}
-                saving={saving}
-                onClose={closeModal}
-                onSave={handleSave}
-                editMode={editMode}
-            >
-                <FormField label="Nombre" required>
-                    <input
-                        type="text"
-                        className="form-control"
-                        value={form.nombre}
-                        onChange={(e) =>
-                            setForm({ ...form, nombre: e.target.value })
-                        }
-                        disabled={saving}
-                    />
-                </FormField>
-                <FormField label="Dirección" required>
-                    <input
-                        type="text"
-                        className="form-control"
-                        value={form.direccion}
-                        onChange={(e) =>
-                            setForm({ ...form, direccion: e.target.value })
-                        }
-                        disabled={saving}
-                    />
-                </FormField>
-                <FormField label="Teléfono">
-                    <input
-                        type="tel"
-                        className="form-control"
-                        value={form.telefono}
-                        onChange={handleTelefonoChange}
-                        maxLength={MAX_TELEFONO}
-                        inputMode="numeric"
-                        disabled={saving}
-                        placeholder="Máx. 9 dígitos"
-                    />
-                </FormField>
-                <FormField label="Email">
-                    <input
-                        type="email"
-                        className="form-control"
-                        value={form.email}
-                        onChange={(e) =>
-                            setForm({ ...form, email: e.target.value })
-                        }
-                        disabled={saving}
-                    />
-                </FormField>
-            </CrudModal>
+                editMode={false}
+                onClose={() => setShowModal(false)}
+                onSaved={handleSaved}
+            />
         </CrudPageLayout>
     );
 };
