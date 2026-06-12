@@ -137,6 +137,7 @@ const PisosPage = () => {
     const [deletingId, setDeletingId] = useState(null);
     const [pageError, setPageError] = useState("");
     const [search, setSearch] = useState("");
+    const [filtroCondominioId, setFiltroCondominioId] = useState("");
     const [filtroTorreId, setFiltroTorreId] = useState("");
     const [showModal, setShowModal] = useState(false);
     const [editMode, setEditMode] = useState(false);
@@ -151,6 +152,28 @@ const PisosPage = () => {
         () => torres.map((t) => ({ ...t, nombre: torreLabel(t) })),
         [torres],
     );
+
+    // Condominios únicos (derivados de las torres) para el filtro en cascada.
+    const condominioOptions = useMemo(() => {
+        const map = new Map();
+        torres.forEach((t) => {
+            if (t.condominioId != null && !map.has(t.condominioId)) {
+                map.set(t.condominioId, {
+                    id: t.condominioId,
+                    nombre: t.condominioNombre || `Condominio ${t.condominioId}`,
+                });
+            }
+        });
+        return Array.from(map.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
+    }, [torres]);
+
+    // Torres del condominio seleccionado (cascada).
+    const torreFilterOptions = useMemo(() => {
+        const base = filtroCondominioId
+            ? torres.filter((t) => String(t.condominioId) === String(filtroCondominioId))
+            : torres;
+        return base.map((t) => ({ ...t, nombre: torreLabel(t) }));
+    }, [torres, filtroCondominioId]);
 
     const loadTorres = async () => {
         const data = await torreService.getAll();
@@ -187,6 +210,9 @@ const PisosPage = () => {
 
     const filteredItems = useMemo(() => {
         let list = items;
+        if (filtroCondominioId) {
+            list = list.filter((item) => String(item.condominioId) === String(filtroCondominioId));
+        }
         if (filtroTorreId) {
             list = list.filter((item) => String(item.torreId) === String(filtroTorreId));
         }
@@ -203,7 +229,7 @@ const PisosPage = () => {
                 `piso ${numero}`.includes(q)
             );
         });
-    }, [items, search, filtroTorreId, torres]);
+    }, [items, search, filtroCondominioId, filtroTorreId, torres]);
 
     const pagination = usePagination(filteredItems);
 
@@ -311,11 +337,27 @@ const PisosPage = () => {
             />
             <div style={{ width: "240px", minWidth: "240px", flexShrink: 0 }}>
                 <SearchableSelect
-                    options={torreSelectOptions}
+                    options={condominioOptions}
+                    value={filtroCondominioId}
+                    onChange={(id) => {
+                        setFiltroCondominioId(id);
+                        setFiltroTorreId("");
+                    }}
+                    disabled={loading}
+                    placeholder="Filtrar condominio..."
+                    allowEmpty
+                    emptyLabel="Todos los condominios"
+                    inputClassName="form-control form-control-sm w-100"
+                />
+            </div>
+            <div style={{ width: "240px", minWidth: "240px", flexShrink: 0 }}>
+                <SearchableSelect
+                    key={`torre-filter-${filtroCondominioId}`}
+                    options={torreFilterOptions}
                     value={filtroTorreId}
                     onChange={setFiltroTorreId}
                     disabled={loading}
-                    placeholder="Filtrar torre..."
+                    placeholder={filtroCondominioId ? "Filtrar torre..." : "Filtrar torre (elige condominio)..."}
                     allowEmpty
                     emptyLabel="Todas las torres"
                     inputClassName="form-control form-control-sm w-100"
@@ -360,7 +402,7 @@ const PisosPage = () => {
                 columns={COLUMNS}
                 colSpan={COLUMNS.length}
                 emptyMessage={
-                    search.trim() || filtroTorreId
+                    search.trim() || filtroTorreId || filtroCondominioId
                         ? "No hay resultados para la búsqueda"
                         : "No hay pisos registrados"
                 }
