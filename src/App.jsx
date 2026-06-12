@@ -4,7 +4,14 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 // ── services ─────────────────────────────────────────
 import { authService } from "./services/authService";
 import { AUTH_SESSION_EXPIRED_EVENT, resetSessionExpiredFlag } from "./services/api";
-import { debugAuthToken, isLoggedIn } from "./utils/authGuard";
+import { isLoggedIn } from "./utils/authGuard";
+import { getScopedCondominioId } from "./utils/permissions";
+
+// El superadmin entra al dashboard; el admin de condominio aterriza en su condominio.
+const homePath = () => {
+    const cid = getScopedCondominioId();
+    return cid ? `/condominios/${cid}` : "/dashboard";
+};
 
 // ── shared ──────────────────────────────────────────
 import LoginForm from "./components/shared/LoginForm";
@@ -13,6 +20,7 @@ import Dashboard from "./components/shared/Dashboard";
 
 // ── infraestructura ───────────────────────────────────
 import CondominiosPage  from "./components/infraestructura/CondominiosPage";
+import CondominioDetailPage from "./components/infraestructura/CondominioDetailPage";
 import TorresPage       from "./components/infraestructura/TorresPage";
 import PisosPage        from "./components/infraestructura/PisosPage";
 import ApartamentosPage from "./components/infraestructura/ApartamentosPage";
@@ -147,13 +155,12 @@ function AppContent() {
     }, [navigate]);
 
     const handleLogin = () => {
-        debugAuthToken();
         if (!isLoggedIn()) {
             return;
         }
         resetSessionExpiredFlag();
         syncAuth();
-        navigate("/dashboard", { replace: true });
+        navigate(homePath(), { replace: true });
     };
 
     const handleLogout = () => {
@@ -168,7 +175,7 @@ function AppContent() {
                 path="/login"
                 element={
                     authenticated
-                        ? <Navigate to="/dashboard" replace />
+                        ? <Navigate to={homePath()} replace />
                         : <LoginPage onLogin={handleLogin} />
                 }
             />
@@ -181,6 +188,11 @@ function AppContent() {
             <Route path="/condominios" element={
                 <ProtectedRoute>
                     <PrivateLayout onLogout={handleLogout}><CondominiosPage /></PrivateLayout>
+                </ProtectedRoute>
+            }/>
+            <Route path="/condominios/:id" element={
+                <ProtectedRoute>
+                    <PrivateLayout onLogout={handleLogout}><CondominioDetailPage /></PrivateLayout>
                 </ProtectedRoute>
             }/>
             <Route path="/torres" element={
@@ -209,8 +221,8 @@ function AppContent() {
                 </ProtectedRoute>
             }/>
 
-            <Route path="/" element={<Navigate to={authenticated ? "/dashboard" : "/login"} replace />}/>
-            <Route path="*" element={<Navigate to={authenticated ? "/dashboard" : "/login"} replace />}/>
+            <Route path="/" element={<Navigate to={authenticated ? homePath() : "/login"} replace />}/>
+            <Route path="*" element={<Navigate to={authenticated ? homePath() : "/login"} replace />}/>
         </Routes>
     );
 }

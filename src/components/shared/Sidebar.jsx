@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { MENU_ITEMS } from "../../constants/permissions";
-import { hasPermission } from "../../utils/permissions";
+import { MENU_ITEMS, PERM } from "../../constants/permissions";
+import { hasPermission, isCondominioAdmin, getScopedCondominioId } from "../../utils/permissions";
 
 const Sidebar = ({ onLogout, sidebarOpen }) => {
     const location = useLocation();
@@ -22,7 +22,16 @@ const Sidebar = ({ onLogout, sidebarOpen }) => {
     const itemClass = (path) =>
         `sidebar-item ${location.pathname === path ? "active" : ""}`;
 
-    const visibleMenu = MENU_ITEMS.filter((item) => hasPermission(item.permission));
+    // El admin de condominio ve un menú reducido enfocado en SU condominio.
+    const scopedId = getScopedCondominioId();
+    const visibleMenu = isCondominioAdmin()
+        ? [
+              { path: `/condominios/${scopedId}`, label: "Mi Condominio", icon: "bi-building" },
+              ...(hasPermission(PERM.VER_CARRITOS)
+                  ? [{ path: "/carritos", label: "Carritos", icon: "bi-cart-fill" }]
+                  : []),
+          ]
+        : MENU_ITEMS.filter((item) => hasPermission(item.permission));
 
     const sidebarStyle = {
         transition: "transform 0.3s ease",

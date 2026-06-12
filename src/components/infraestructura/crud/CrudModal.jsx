@@ -6,13 +6,15 @@ const CrudModal = ({
     onClose,
     onSave,
     editMode,
+    size,
+    saveLabel,
     children,
 }) => {
     if (!show) return null;
 
     return (
         <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-            <div className="modal-dialog modal-dialog-centered">
+            <div className={`modal-dialog modal-dialog-centered${size ? ` modal-${size}` : ""}`}>
                 <div className="modal-content border-0 shadow">
                     <div className="modal-header border-bottom-0 pb-0">
                         <h5 className="modal-title fw-semibold">{title}</h5>
@@ -32,10 +34,8 @@ const CrudModal = ({
                                     <span className="spinner-border spinner-border-sm me-2" />
                                     Guardando...
                                 </>
-                            ) : editMode ? (
-                                "Guardar cambios"
                             ) : (
-                                "Agregar"
+                                saveLabel || (editMode ? "Guardar cambios" : "Agregar")
                             )}
                         </button>
                     </div>

@@ -16,6 +16,10 @@ export const PERM = {
     CREAR_APARTAMENTOS: "CREAR_APARTAMENTOS",
     EDITAR_APARTAMENTOS: "EDITAR_APARTAMENTOS",
     ELIMINAR_APARTAMENTOS: "ELIMINAR_APARTAMENTOS",
+    VER_ENTRADAS: "VER_ENTRADAS",
+    CREAR_ENTRADAS: "CREAR_ENTRADAS",
+    EDITAR_ENTRADAS: "EDITAR_ENTRADAS",
+    ELIMINAR_ENTRADAS: "ELIMINAR_ENTRADAS",
     VER_CARRITOS: "VER_CARRITOS",
     CREAR_CARRITOS: "CREAR_CARRITOS",
     EDITAR_CARRITOS: "EDITAR_CARRITOS",
@@ -55,6 +59,12 @@ export const MODULE_PERMS = {
         create: PERM.CREAR_APARTAMENTOS,
         edit: PERM.EDITAR_APARTAMENTOS,
         delete: PERM.ELIMINAR_APARTAMENTOS,
+    },
+    ENTRADAS: {
+        view: PERM.VER_ENTRADAS,
+        create: PERM.CREAR_ENTRADAS,
+        edit: PERM.EDITAR_ENTRADAS,
+        delete: PERM.ELIMINAR_ENTRADAS,
     },
     CARRITOS: {
         view: PERM.VER_CARRITOS,
@@ -125,6 +135,15 @@ export const PERMISSION_GROUPS = [
             { key: PERM.CREAR_APARTAMENTOS, label: "Crear" },
             { key: PERM.EDITAR_APARTAMENTOS, label: "Editar" },
             { key: PERM.ELIMINAR_APARTAMENTOS, label: "Eliminar" },
+        ],
+    },
+    {
+        module: "Entradas",
+        items: [
+            { key: PERM.VER_ENTRADAS, label: "Ver" },
+            { key: PERM.CREAR_ENTRADAS, label: "Crear" },
+            { key: PERM.EDITAR_ENTRADAS, label: "Editar" },
+            { key: PERM.ELIMINAR_ENTRADAS, label: "Eliminar" },
         ],
     },
     {

@@ -1,0 +1,277 @@
+/* ===== Tarjetas de condominios (vista tipo grid) ===== */
+
+.cond-card {
+    cursor: pointer;
+    border: none;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.cond-card:hover,
+.cond-card:focus-visible {
+    transform: translateY(-6px);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16) !important;
+    outline: none;
+}
+
+/* Cabecera con ilustración / foto */
+.cond-card-banner {
+    position: relative;
+    height: 92px;
+    background-size: cover;
+    background-position: center;
+    background-color: #5a6b9c;
+}
+
+.cond-card-watermark {
+    position: absolute;
+    right: 12px;
+    top: 2px;
+    font-size: 4.6rem;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.28);
+}
+
+.cond-card-go {
+    position: absolute;
+    right: 14px;
+    bottom: 10px;
+    font-size: 1.5rem;
+    color: #fff;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.cond-card:hover .cond-card-go,
+.cond-card:focus-visible .cond-card-go {
+    opacity: 0.95;
+    transform: translateX(0);
+}
+
+/* Insignia con iniciales que flota sobre la cabecera */
+.cond-card-badge {
+    position: absolute;
+    left: 20px;
+    bottom: -24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.15rem;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.cond-card-body {
+    padding-top: 2.4rem;
+}
+
+/* Grid de estadísticas */
+.cond-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.cond-stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cond-stat--wide {
+    grid-column: 1 / -1;
+    background: #f6f7fb;
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-top: 2px;
+}
+
+.cond-stats-footer {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 12px;
+    background: #f6f7fb;
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-top: 2px;
+}
+
+.cond-stats-footer > .cond-stat {
+    flex: 1;
+}
+
+.cond-stat-chip {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.cond-stat-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #25396f;
+}
+
+/* ===== Cabecera de la página de detalle ===== */
+.cond-detail-header {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    color: #fff;
+}
+
+.cond-detail-header .text-muted,
+.cond-detail-header small {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.cond-stat-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.cond-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+/* Brillo decorativo en las cabeceras con degradado */
+.cond-card-banner::after,
+.cond-detail-header::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 82% -30%, rgba(255, 255, 255, 0.38), transparent 58%);
+    pointer-events: none;
+}
+
+.cond-detail-header {
+    position: relative;
+}
+
+.cond-detail-header .card-body {
+    position: relative;
+    z-index: 1;
+}
+
+.cond-detail-watermark {
+    position: absolute;
+    right: 18px;
+    bottom: -22px;
+    font-size: 7rem;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.16);
+    z-index: 0;
+}
+
+/* ===== Tarjetas de estadísticas (página de detalle) ===== */
+.cond-statgrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+}
+
+.cond-statcard {
+    border: none;
+    border-radius: 14px;
+}
+
+.cond-statcard-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #25396f;
+}
+
+.cond-statcard-hint {
+    font-size: 0.72rem;
+    color: #9aa0ac;
+    margin-top: 3px;
+}
+
+.cond-stat-chip--lg {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    font-size: 1.25rem;
+}
+
+/* ===== Tablas de las secciones ===== */
+.cond-section {
+    border: none;
+    border-radius: 14px;
+}
+
+.cond-table {
+    margin-bottom: 0;
+}
+
+.cond-table thead th {
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    color: #9aa0ac;
+    font-weight: 600;
+    border-bottom: 1px solid #eef0f5;
+}
+
+.cond-empty {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: #9aa0ac;
+}
+
+.cond-empty i {
+    font-size: 1.8rem;
+    display: block;
+    margin-bottom: 0.4rem;
+    opacity: 0.6;
+}
+
+/* ===== Selector de dirección con mapa ===== */
+.map-picker {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e3e6ef;
+}
+
+.map-pin {
+    color: #fc544b;
+    font-size: 1.9rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.leaflet-container {
+    font: inherit;
+}
