@@ -140,6 +140,8 @@ const ApartamentosPage = () => {
     const [deletingId, setDeletingId] = useState(null);
     const [pageError, setPageError] = useState("");
     const [search, setSearch] = useState("");
+    const [filtroCondominioId, setFiltroCondominioId] = useState("");
+    const [filtroTorreId, setFiltroTorreId] = useState("");
     const [filtroPisoId, setFiltroPisoId] = useState("");
     const [showModal, setShowModal] = useState(false);
     const [editMode, setEditMode] = useState(false);
@@ -167,6 +169,37 @@ const ApartamentosPage = () => {
         () => pisos.map((p) => ({ ...p, nombre: pisoLabel(p) })),
         [pisos, torreById],
     );
+
+    // ===== Filtros en cascada: Condominio -> Torre -> Piso =====
+    const condominioOptions = useMemo(() => {
+        const map = new Map();
+        torres.forEach((t) => {
+            if (t.condominioId != null && !map.has(t.condominioId)) {
+                map.set(t.condominioId, {
+                    id: t.condominioId,
+                    nombre: t.condominioNombre || `Condominio ${t.condominioId}`,
+                });
+            }
+        });
+        return Array.from(map.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
+    }, [torres]);
+
+    const torreFilterOptions = useMemo(() => {
+        const base = filtroCondominioId
+            ? torres.filter((t) => String(t.condominioId) === String(filtroCondominioId))
+            : torres;
+        return base.map((t) => ({ ...t, nombre: t.nombre }));
+    }, [torres, filtroCondominioId]);
+
+    const pisoFilterOptions = useMemo(() => {
+        let base = pisos;
+        if (filtroTorreId) {
+            base = base.filter((p) => String(p.torreId) === String(filtroTorreId));
+        } else if (filtroCondominioId) {
+            base = base.filter((p) => String(p.condominioId) === String(filtroCondominioId));
+        }
+        return base.map((p) => ({ ...p, nombre: pisoLabel(p) }));
+    }, [pisos, filtroTorreId, filtroCondominioId, torreById]);
 
     useEffect(() => {
         (async () => {
@@ -216,6 +249,12 @@ const ApartamentosPage = () => {
 
     const filteredItems = useMemo(() => {
         let list = items;
+        if (filtroCondominioId) {
+            list = list.filter((item) => String(item.condominioId) === String(filtroCondominioId));
+        }
+        if (filtroTorreId) {
+            list = list.filter((item) => String(item.torreId) === String(filtroTorreId));
+        }
         if (filtroPisoId) {
             list = list.filter((item) => String(item.pisoId) === String(filtroPisoId));
         }
@@ -235,7 +274,7 @@ const ApartamentosPage = () => {
                 area.includes(q)
             );
         });
-    }, [items, search, filtroPisoId, pisos, torres]);
+    }, [items, search, filtroCondominioId, filtroTorreId, filtroPisoId, pisos, torres]);
 
     const pagination = usePagination(filteredItems);
 
@@ -345,9 +384,42 @@ const ApartamentosPage = () => {
                 onChange={(e) => setSearch(e.target.value)}
                 disabled={loading}
             />
-            <div style={{ width: "240px", minWidth: "240px", flexShrink: 0 }}>
+            <div style={{ width: "220px", minWidth: "220px", flexShrink: 0 }}>
                 <SearchableSelect
-                    options={pisoSelectOptions}
+                    options={condominioOptions}
+                    value={filtroCondominioId}
+                    onChange={(id) => {
+                        setFiltroCondominioId(id);
+                        setFiltroTorreId("");
+                        setFiltroPisoId("");
+                    }}
+                    disabled={loading}
+                    placeholder="Filtrar condominio..."
+                    allowEmpty
+                    emptyLabel="Todos los condominios"
+                    inputClassName="form-control form-control-sm w-100"
+                />
+            </div>
+            <div style={{ width: "200px", minWidth: "200px", flexShrink: 0 }}>
+                <SearchableSelect
+                    key={`torre-filter-${filtroCondominioId}`}
+                    options={torreFilterOptions}
+                    value={filtroTorreId}
+                    onChange={(id) => {
+                        setFiltroTorreId(id);
+                        setFiltroPisoId("");
+                    }}
+                    disabled={loading}
+                    placeholder={filtroCondominioId ? "Filtrar torre..." : "Torre (elige condominio)..."}
+                    allowEmpty
+                    emptyLabel="Todas las torres"
+                    inputClassName="form-control form-control-sm w-100"
+                />
+            </div>
+            <div style={{ width: "200px", minWidth: "200px", flexShrink: 0 }}>
+                <SearchableSelect
+                    key={`piso-filter-${filtroCondominioId}-${filtroTorreId}`}
+                    options={pisoFilterOptions}
                     value={filtroPisoId}
                     onChange={setFiltroPisoId}
                     disabled={loading}
@@ -399,7 +471,7 @@ const ApartamentosPage = () => {
                 columns={COLUMNS}
                 colSpan={COLUMNS.length}
                 emptyMessage={
-                    search.trim() || filtroPisoId
+                    search.trim() || filtroPisoId || filtroTorreId || filtroCondominioId
                         ? "No hay resultados para la búsqueda"
                         : "No hay apartamentos registrados"
                 }
