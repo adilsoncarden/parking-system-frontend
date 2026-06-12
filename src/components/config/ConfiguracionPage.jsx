@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { usuarioService } from "../../services/usuarioService";
 import { rolService } from "../../services/rolService";
 import { apartamentoService } from "../../services/apartamentoService";
+import { condominioService } from "../../services/condominioService";
 import { getApiErrorMessage } from "../../services/api";
 import { confirmDelete, showSuccess, showError } from "../../utils/swalHelpers";
 import CrudPageLayout from "../infraestructura/crud/CrudPageLayout";
@@ -26,6 +27,7 @@ const EMPTY_FORM = {
     estado: "ACTIVO",
     rolId: "",
     apartamentoId: "",
+    condominioId: "",
 };
 
 const MAX_TELEFONO = 9;
@@ -319,6 +321,7 @@ const ConfiguracionPage = () => {
     const [items, setItems] = useState([]);
     const [roles, setRoles] = useState([]);
     const [apartamentos, setApartamentos] = useState([]);
+    const [condominios, setCondominios] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
@@ -346,14 +349,20 @@ const ConfiguracionPage = () => {
         [apartamentos],
     );
 
+    const condominioOptions = useMemo(
+        () => condominios.map((c) => ({ ...c, nombre: c.nombre })),
+        [condominios],
+    );
+
     useEffect(() => {
         (async () => {
             try {
                 setPageError("");
-                const [usuariosRes, rolesRes, aptosRes] = await Promise.allSettled([
+                const [usuariosRes, rolesRes, aptosRes, condosRes] = await Promise.allSettled([
                     usuarioService.getAll(),
                     rolService.getAll(),
                     apartamentoService.getAll(),
+                    condominioService.getAll(),
                 ]);
 
                 if (usuariosRes.status === "fulfilled") {
@@ -366,6 +375,9 @@ const ConfiguracionPage = () => {
                 }
                 if (aptosRes.status === "fulfilled") {
                     setApartamentos(aptosRes.value);
+                }
+                if (condosRes.status === "fulfilled") {
+                    setCondominios(condosRes.value);
                 }
             } catch (err) {
                 setPageError(getApiErrorMessage(err, "Error al cargar configuración"));
@@ -424,6 +436,7 @@ const ConfiguracionPage = () => {
             estado: item.estado || "ACTIVO",
             rolId: item.rolId || "",
             apartamentoId: item.apartamentoId || "",
+            condominioId: item.condominioId || "",
         });
         setModalError("");
         setShowModal(true);
@@ -736,6 +749,23 @@ const ConfiguracionPage = () => {
                         placeholder="Buscar apartamento..."
                         allowEmpty
                         emptyLabel="Sin apartamento"
+                        inputClassName="form-control"
+                    />
+                </FormField>
+                <FormField label="Condominio (para admin de condominio)">
+                    <SearchableSelect
+                        key={
+                            editMode
+                                ? `cond-edit-${selected?.id}-${form.condominioId}`
+                                : `cond-create-${createFormKey}`
+                        }
+                        options={condominioOptions}
+                        value={form.condominioId}
+                        onChange={(id) => setForm({ ...form, condominioId: id })}
+                        disabled={saving}
+                        placeholder="Asignar a un condominio..."
+                        allowEmpty
+                        emptyLabel="Sin condominio (no es admin de condominio)"
                         inputClassName="form-control"
                     />
                 </FormField>
