@@ -135,17 +135,21 @@ const CondominioFormModal = ({ show, editMode = false, target = null, onClose, o
                             <span className="input-group-text"><i className="bi bi-geo-alt" /></span>
                             <input
                                 type="text"
-                                className="form-control"
+                                className="form-control bg-light"
                                 value={form.direccion}
-                                onChange={(e) => setForm({ ...form, direccion: e.target.value })}
-                                disabled={saving}
-                                placeholder="Dirección exacta"
+                                readOnly
+                                placeholder="Se completa con el mapa de abajo"
+                                title="Este campo se fija buscando o haciendo clic en el mapa"
                             />
                         </div>
                         <MapAddressPicker
                             disabled={saving}
                             onChange={(direccion) => setForm((prev) => ({ ...prev, direccion }))}
                         />
+                        <small className="text-muted d-block mt-1">
+                            <i className="bi bi-lock me-1" />
+                            La dirección no se escribe a mano: se fija con el buscador o los clics en el mapa.
+                        </small>
                     </FormField>
                 </div>
             </div>
