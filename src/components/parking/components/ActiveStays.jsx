@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useParking } from "../context/ParkingContext";
 import { format } from "date-fns";
+import { usePagination } from "../../../hooks/usePagination";
+import Pagination from "./Pagination";
 
 export default function ActiveStays() {
   const [filter, setFilter] = useState("");
@@ -20,6 +22,10 @@ export default function ActiveStays() {
     stay.placa.toLowerCase().includes(filter.toLowerCase()),
   );
 
+  // Paginador: muestra de a 10 estancias por página.
+  const { paginatedItems, currentPage, setCurrentPage, totalPages } =
+    usePagination(filteredStays, 10);
+
   const getDuration = (horaEntrada) => {
     if (!horaEntrada) return "--";
     const [h, m] = horaEntrada.split(":").map(Number);
@@ -35,7 +41,7 @@ export default function ActiveStays() {
   };
 
   return (
-    <section className="w-[400px] flex flex-col gap-6">
+    <section className="flex flex-col gap-6" style={{ width: "400px" }}>
       <div className="bg-white border border-slate-200 rounded-lg flex flex-col h-[calc(100vh-128px)] shadow-sm">
         <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50 rounded-t-lg">
           <h3 className="font-semibold text-slate-800">Estancias Activas</h3>
@@ -65,7 +71,7 @@ export default function ActiveStays() {
               No hay estancias activas
             </div>
           ) : (
-            filteredStays.map((stay) => (
+            paginatedItems.map((stay) => (
               <div
                 key={stay.id}
                 className="p-3 border border-slate-200 rounded bg-white hover:bg-slate-50 transition-colors group flex items-center justify-between"
@@ -119,6 +125,16 @@ export default function ActiveStays() {
             ))
           )}
         </div>
+
+        {totalPages > 1 && (
+          <div className="p-3 border-t border-slate-200 bg-slate-50/50 rounded-b-lg flex justify-center">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              setCurrentPage={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
     </section>
   );

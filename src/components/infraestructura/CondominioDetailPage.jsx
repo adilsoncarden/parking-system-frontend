@@ -5,9 +5,11 @@ import { entradaService } from "../../services/entradaService";
 import { getApiErrorMessage } from "../../services/api";
 import { confirmAction, showSuccess, showError } from "../../utils/swalHelpers";
 import CrudPageLayout from "./crud/CrudPageLayout";
+import CrudPagination from "./crud/CrudPagination";
 import CondominioFormModal from "./CondominioFormModal";
 import EntradaFormModal from "./EntradaFormModal";
 import { useModulePermissions } from "../../hooks/useModulePermissions";
+import { usePagination } from "../../hooks/usePagination";
 import { initialsForName } from "../../utils/condominioVisual";
 import { imageForCondominio } from "../../utils/condominioImages";
 
@@ -163,6 +165,12 @@ const CondominioDetailPage = () => {
         }
     };
 
+    // Paginadores (antes de los early-returns por las reglas de hooks).
+    // Las listas largas (torres, carritos, residentes) se muestran de a 10.
+    const torresPag = usePagination(data?.torres ?? []);
+    const carritosPag = usePagination(data?.carritos ?? []);
+    const residentesPag = usePagination(data?.residentes ?? []);
+
     if (loading) {
         return (
             <CrudPageLayout loading title="Detalle de Condominio" subtitle="" />
@@ -213,7 +221,7 @@ const CondominioDetailPage = () => {
                     >
                         {initialsForName(condominio.nombre)}
                     </span>
-                    <div className="flex-grow-1">
+                    <div className="grow">
                         <h3 className="mb-1">{condominio.nombre}</h3>
                         <div className="small d-flex flex-wrap gap-3">
                             <span><i className="bi bi-geo-alt me-1" />{condominio.direccion || "Sin dirección"}</span>
@@ -339,7 +347,7 @@ const CondominioDetailPage = () => {
                                     {torres.length === 0 ? (
                                         <EmptyRow colSpan={3} icon="bi-building" message="Sin torres registradas" />
                                     ) : (
-                                        torres.map((t) => (
+                                        torresPag.paginatedItems.map((t) => (
                                             <tr key={t.id}>
                                                 <td className="ps-4 fw-semibold">{t.nombre}</td>
                                                 <td>{t.nPisos}</td>
@@ -350,6 +358,13 @@ const CondominioDetailPage = () => {
                                 </tbody>
                             </table>
                         </div>
+                        <CrudPagination
+                            currentPage={torresPag.currentPage}
+                            totalPages={torresPag.totalPages}
+                            onPageChange={torresPag.setCurrentPage}
+                            totalItems={torresPag.totalItems}
+                            pageSize={torresPag.pageSize}
+                        />
                     </SectionCard>
                 </div>
 
@@ -369,7 +384,7 @@ const CondominioDetailPage = () => {
                                     {carritos.length === 0 ? (
                                         <EmptyRow colSpan={3} icon="bi-cart3" message="Sin carritos registrados" />
                                     ) : (
-                                        carritos.map((c) => (
+                                        carritosPag.paginatedItems.map((c) => (
                                             <tr key={c.id}>
                                                 <td className="ps-4 fw-semibold">{c.codigo || "—"}</td>
                                                 <td>{c.descripcion || "—"}</td>
@@ -380,6 +395,13 @@ const CondominioDetailPage = () => {
                                 </tbody>
                             </table>
                         </div>
+                        <CrudPagination
+                            currentPage={carritosPag.currentPage}
+                            totalPages={carritosPag.totalPages}
+                            onPageChange={carritosPag.setCurrentPage}
+                            totalItems={carritosPag.totalItems}
+                            pageSize={carritosPag.pageSize}
+                        />
                     </SectionCard>
                 </div>
 
@@ -401,7 +423,7 @@ const CondominioDetailPage = () => {
                                     {residentes.length === 0 ? (
                                         <EmptyRow colSpan={5} icon="bi-people" message="Sin residentes registrados" />
                                     ) : (
-                                        residentes.map((r) => (
+                                        residentesPag.paginatedItems.map((r) => (
                                             <tr key={r.id}>
                                                 <td className="ps-4 fw-semibold">
                                                     {[r.nombres, r.apellidos].filter(Boolean).join(" ") || "—"}
@@ -416,6 +438,13 @@ const CondominioDetailPage = () => {
                                 </tbody>
                             </table>
                         </div>
+                        <CrudPagination
+                            currentPage={residentesPag.currentPage}
+                            totalPages={residentesPag.totalPages}
+                            onPageChange={residentesPag.setCurrentPage}
+                            totalItems={residentesPag.totalItems}
+                            pageSize={residentesPag.pageSize}
+                        />
                     </SectionCard>
                 </div>
             </div>
