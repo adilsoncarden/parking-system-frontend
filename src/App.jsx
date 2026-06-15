@@ -5,12 +5,15 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 import { authService } from "./services/authService";
 import { AUTH_SESSION_EXPIRED_EVENT, resetSessionExpiredFlag } from "./services/api";
 import { isLoggedIn } from "./utils/authGuard";
-import { getScopedCondominioId } from "./utils/permissions";
+import { getScopedCondominioId, hasPermission } from "./utils/permissions";
+import { PERM } from "./constants/permissions";
 
-// El superadmin entra al dashboard; el admin de condominio aterriza en su condominio.
+// El superadmin entra al dashboard; el admin/subadmin de condominio aterriza en su
+// condominio; el portero (sin acceso a condominios) aterriza en Control de Acceso.
 const homePath = () => {
     const cid = getScopedCondominioId();
-    return cid ? `/condominios/${cid}` : "/dashboard";
+    if (!cid) return "/dashboard";
+    return hasPermission(PERM.VER_TORRES) ? `/condominios/${cid}` : "/parking/acceso";
 };
 
 // ── shared ──────────────────────────────────────────
@@ -30,6 +33,13 @@ import CarritosPage from "./components/carritos/CarritosPage";
 
 // ── config ────────────────────────────────────────────
 import ConfiguracionPage from "./components/config/ConfiguracionPage";
+
+// ── parking (ParkControl) ─────────────────────────────
+import { ParkingProvider } from "./components/parking/context/ParkingContext";
+import EntryExitPage from "./components/parking/pages/EntryExitPage";
+import ResidentsPage from "./components/parking/pages/ResidentsPage";
+import ParkingMapPage from "./components/parking/pages/ParkingMapPage";
+import HistoryPage from "./components/parking/pages/HistoryPage";
 
 // ═══════════════════════════════════════════════════════
 // Layout principal — envuelve todas las páginas privadas
@@ -218,6 +228,28 @@ function AppContent() {
             <Route path="/config" element={
                 <ProtectedRoute>
                     <PrivateLayout onLogout={handleLogout}><ConfiguracionPage /></PrivateLayout>
+                </ProtectedRoute>
+            }/>
+
+            {/* ── Parking (ParkControl) ── */}
+            <Route path="/parking/acceso" element={
+                <ProtectedRoute>
+                    <PrivateLayout onLogout={handleLogout}><ParkingProvider><EntryExitPage /></ParkingProvider></PrivateLayout>
+                </ProtectedRoute>
+            }/>
+            <Route path="/parking/residentes" element={
+                <ProtectedRoute>
+                    <PrivateLayout onLogout={handleLogout}><ParkingProvider><ResidentsPage /></ParkingProvider></PrivateLayout>
+                </ProtectedRoute>
+            }/>
+            <Route path="/parking/mapa" element={
+                <ProtectedRoute>
+                    <PrivateLayout onLogout={handleLogout}><ParkingProvider><ParkingMapPage /></ParkingProvider></PrivateLayout>
+                </ProtectedRoute>
+            }/>
+            <Route path="/parking/historial" element={
+                <ProtectedRoute>
+                    <PrivateLayout onLogout={handleLogout}><ParkingProvider><HistoryPage /></ParkingProvider></PrivateLayout>
                 </ProtectedRoute>
             }/>
 
