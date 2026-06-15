@@ -15,6 +15,7 @@ import "./styles/crud-tables.css";
 import "./styles/condominios.css";
 import "./styles/login.css";
 import "./styles/dark-theme.css";
+import "./styles/parking-tailwind.css";
 
 
 ReactDOM.createRoot(document.getElementById("root")).render(

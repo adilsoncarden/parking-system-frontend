@@ -1,0 +1,27 @@
+/*
+ * Tailwind 4 para el módulo Parking (ParkControl), SIN preflight.
+ * El preflight es el reset global de Tailwind que pisaría los estilos de Bootstrap/Mazer.
+ * Al cargar solo `theme` (tokens) + `utilities` (clases), las pantallas de parking
+ * usan sus clases Tailwind sin afectar al resto de la app.
+ */
+@layer theme, base, components, utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme {
+    --font-sans: 'DM Sans', sans-serif;
+    --color-primary: #111827;
+    --color-secondary: #4b5563;
+    --color-background: #f3f4f6;
+    --color-surface: #ffffff;
+    --color-border: #e5e7eb;
+}
+
+/* La fuente DM Sans solo dentro del módulo parking (no toca el resto de la app). */
+.parking-module {
+    font-family: var(--font-sans);
+}
