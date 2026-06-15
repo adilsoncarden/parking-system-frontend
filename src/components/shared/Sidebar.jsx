@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, Fragment } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { MENU_ITEMS, PERM } from "../../constants/permissions";
 import { hasPermission, isCondominioAdmin, getScopedCondominioId } from "../../utils/permissions";
@@ -22,14 +22,26 @@ const Sidebar = ({ onLogout, sidebarOpen }) => {
     const itemClass = (path) =>
         `sidebar-item ${location.pathname === path ? "active" : ""}`;
 
-    // El admin de condominio ve un menú reducido enfocado en SU condominio.
+    // Menú reducido para quien está ligado a UN condominio (admin/subadmin/portero).
+    // Cada ítem se gatea por permiso, así el portero solo ve Parking y el
+    // admin/subadmin ven además Mi Condominio + Carritos. Todo queda acotado a
+    // su condominio por el scoping del backend (currentUser.condominioId).
     const scopedId = getScopedCondominioId();
+    const parkingItems = MENU_ITEMS.filter(
+        (item) => item.path.startsWith("/parking/") && hasPermission(item.permission),
+    );
     const visibleMenu = isCondominioAdmin()
         ? [
-              { path: `/condominios/${scopedId}`, label: "Mi Condominio", icon: "bi-building" },
+              // "Mi Condominio" se gatea por VER_TORRES (no por VER_CONDOMINIOS): el portero
+              // puede tener VER_CONDOMINIOS solo para los datos de carritos, pero NO debe ver
+              // ni entrar al detalle del condominio (no tiene VER_TORRES/PISOS).
+              ...(hasPermission(PERM.VER_TORRES)
+                  ? [{ path: `/condominios/${scopedId}`, label: "Mi Condominio", icon: "bi-building" }]
+                  : []),
               ...(hasPermission(PERM.VER_CARRITOS)
                   ? [{ path: "/carritos", label: "Carritos", icon: "bi-cart-fill" }]
                   : []),
+              ...parkingItems,
           ]
         : MENU_ITEMS.filter((item) => hasPermission(item.permission));
 
@@ -74,12 +86,17 @@ const Sidebar = ({ onLogout, sidebarOpen }) => {
                         <li className="sidebar-title">Principal</li>
 
                         {visibleMenu.map((item) => (
-                            <li key={item.path} className={itemClass(item.path)}>
-                                <NavLink to={item.path} className="sidebar-link">
-                                    <i className={`bi ${item.icon}`} />
-                                    <span>{item.label}</span>
-                                </NavLink>
-                            </li>
+                            <Fragment key={item.path}>
+                                {item.section && (
+                                    <li className="sidebar-title">{item.section}</li>
+                                )}
+                                <li className={itemClass(item.path)}>
+                                    <NavLink to={item.path} className="sidebar-link">
+                                        <i className={`bi ${item.icon}`} />
+                                        <span>{item.label}</span>
+                                    </NavLink>
+                                </li>
+                            </Fragment>
                         ))}
 
                         <li className="sidebar-item">

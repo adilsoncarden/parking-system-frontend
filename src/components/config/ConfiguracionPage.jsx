@@ -3,6 +3,7 @@ import { usuarioService } from "../../services/usuarioService";
 import { rolService } from "../../services/rolService";
 import { apartamentoService } from "../../services/apartamentoService";
 import { condominioService } from "../../services/condominioService";
+import { entradaService } from "../../services/entradaService";
 import { getApiErrorMessage } from "../../services/api";
 import { confirmDelete, showSuccess, showError } from "../../utils/swalHelpers";
 import CrudPageLayout from "../infraestructura/crud/CrudPageLayout";
@@ -28,16 +29,42 @@ const EMPTY_FORM = {
     rolId: "",
     apartamentoId: "",
     condominioId: "",
+    entradaId: "",
+    turno: "",
 };
 
 const MAX_TELEFONO = 9;
+
+// La gestión de Usuarios es solo para el PERSONAL (staff) del sistema.
+// Los residentes (3000+) son datos de parking y se ven en el Directorio de Residentes,
+// no acá. Así la lista queda limpia con solo las cuentas de acceso.
+const STAFF_ROLES = new Set(["ADMIN", "ADMIN_CONDOMINIO", "SUBADMIN", "PORTERO"]);
+
+// Íconos por módulo para el panel de "Permisos por rol".
+const MODULE_ICONS = {
+    Dashboard: "bi-speedometer2",
+    Condominios: "bi-buildings",
+    Torres: "bi-building",
+    Pisos: "bi-layers",
+    Apartamentos: "bi-door-closed",
+    Entradas: "bi-door-open",
+    Carritos: "bi-cart",
+    Préstamos: "bi-arrow-left-right",
+    Configuración: "bi-gear",
+    Parking: "bi-p-square",
+    Vehículos: "bi-car-front",
+    Estacionamientos: "bi-p-circle",
+    Zonas: "bi-grid-3x3",
+    Plazas: "bi-grid",
+    Pases: "bi-ticket-perforated",
+    Accesos: "bi-shield-check",
+};
 
 const COLUMNS = [
     { key: "idx", label: "#" },
     { key: "nombre", label: "Nombre" },
     { key: "email", label: "Email" },
     { key: "rol", label: "Rol" },
-    { key: "tipo", label: "Tipo" },
     { key: "estado", label: "Estado" },
     { key: "actions", label: "Acciones" },
 ];
@@ -233,10 +260,41 @@ const RolPermisosPanel = ({ roles, saving, setSaving }) => {
         permisosCatalog.map((p) => [p.nombre, p.id]),
     );
 
+    // IDs de permisos existentes de un módulo (solo los que están en el catálogo).
+    const moduleIds = (group) =>
+        group.items.map((i) => permisoIdByNombre[i.key]).filter(Boolean);
+
+    const moduleAllChecked = (group) => {
+        const ids = moduleIds(group);
+        return ids.length > 0 && ids.every((id) => selectedPermisoIds.includes(id));
+    };
+
+    const toggleModule = (group) => {
+        const ids = moduleIds(group);
+        const all = ids.every((id) => selectedPermisoIds.includes(id));
+        setSelectedPermisoIds((prev) =>
+            all
+                ? prev.filter((id) => !ids.includes(id))
+                : [...new Set([...prev, ...ids])],
+        );
+    };
+
+    const totalSeleccionados = PERMISSION_GROUPS.reduce(
+        (acc, g) => acc + moduleIds(g).filter((id) => selectedPermisoIds.includes(id)).length,
+        0,
+    );
+
     return (
         <div className="card shadow-sm border-0">
-            <div className="card-header py-3 px-4">
-                <h5 className="mb-0 fw-semibold">Permisos por rol</h5>
+            <div className="card-header bg-white border-bottom py-3 px-4 d-flex align-items-center gap-2">
+                <span className="d-inline-flex align-items-center justify-content-center rounded-3 bg-primary bg-opacity-10 text-primary"
+                    style={{ width: "2.25rem", height: "2.25rem" }}>
+                    <i className="bi bi-shield-lock-fill" />
+                </span>
+                <div>
+                    <h5 className="mb-0 fw-semibold">Permisos por rol</h5>
+                    <small className="text-muted">Activa o desactiva lo que puede hacer cada rol</small>
+                </div>
             </div>
             <div className="card-body px-4 pb-4">
                 {panelError && (
@@ -252,11 +310,21 @@ const RolPermisosPanel = ({ roles, saving, setSaving }) => {
                         inputClassName="form-control"
                     />
                 </FormField>
-                {isAdminRol && (
-                    <div className="alert alert-info py-2 small">
-                        El rol ADMIN tiene todos los permisos automáticamente.
+
+                {!selectedRolId && (
+                    <div className="text-center text-muted py-5">
+                        <i className="bi bi-hand-index-thumb fs-1 d-block mb-2 opacity-50" />
+                        Elige un rol para configurar sus permisos.
                     </div>
                 )}
+
+                {isAdminRol && (
+                    <div className="alert alert-info d-flex align-items-center gap-2 py-2 small mb-0">
+                        <i className="bi bi-stars" />
+                        El rol <strong>ADMIN</strong> tiene todos los permisos automáticamente.
+                    </div>
+                )}
+
                 {selectedRolId && !isAdminRol && (
                     <>
                         {loadingPerms ? (
@@ -265,44 +333,77 @@ const RolPermisosPanel = ({ roles, saving, setSaving }) => {
                             </div>
                         ) : (
                             <div className="row g-3">
-                                {PERMISSION_GROUPS.map((group) => (
-                                    <div key={group.module} className="col-md-6">
-                                        <div className="border rounded p-3 h-100">
-                                            <h6 className="fw-semibold mb-3">{group.module}</h6>
-                                            {group.items.map((item) => {
-                                                const permisoId = permisoIdByNombre[item.key];
-                                                if (!permisoId) return null;
-                                                return (
-                                                    <div key={item.key} className="form-check mb-2">
+                                {PERMISSION_GROUPS.map((group) => {
+                                    const ids = moduleIds(group);
+                                    if (ids.length === 0) return null;
+                                    const checkedCount = ids.filter((id) =>
+                                        selectedPermisoIds.includes(id),
+                                    ).length;
+                                    const allOn = moduleAllChecked(group);
+                                    return (
+                                        <div key={group.module} className="col-md-6 col-xl-4">
+                                            <div className={`border rounded-3 h-100 overflow-hidden ${allOn ? "border-primary" : ""}`}>
+                                                <div className={`d-flex align-items-center justify-content-between px-3 py-2 ${allOn ? "bg-primary bg-opacity-10" : "bg-light"}`}>
+                                                    <span className="fw-semibold d-flex align-items-center gap-2">
+                                                        <i className={`bi ${MODULE_ICONS[group.module] || "bi-folder"} text-primary`} />
+                                                        {group.module}
+                                                        <span className="badge bg-secondary bg-opacity-50 fw-normal">
+                                                            {checkedCount}/{ids.length}
+                                                        </span>
+                                                    </span>
+                                                    <div className="form-check form-switch m-0" title="Marcar todos">
                                                         <input
                                                             className="form-check-input"
                                                             type="checkbox"
-                                                            id={`perm-${item.key}`}
-                                                            checked={selectedPermisoIds.includes(permisoId)}
-                                                            onChange={() => togglePermiso(permisoId)}
+                                                            checked={allOn}
+                                                            onChange={() => toggleModule(group)}
                                                             disabled={saving}
                                                         />
-                                                        <label
-                                                            className="form-check-label"
-                                                            htmlFor={`perm-${item.key}`}
-                                                        >
-                                                            {item.label}
-                                                        </label>
                                                     </div>
-                                                );
-                                            })}
+                                                </div>
+                                                <div className="px-3 py-2">
+                                                    {group.items.map((item) => {
+                                                        const permisoId = permisoIdByNombre[item.key];
+                                                        if (!permisoId) return null;
+                                                        const on = selectedPermisoIds.includes(permisoId);
+                                                        return (
+                                                            <label
+                                                                key={item.key}
+                                                                className={`d-flex align-items-center justify-content-between gap-2 py-1 px-1 rounded ${on ? "text-primary fw-medium" : "text-body"}`}
+                                                                style={{ cursor: saving ? "default" : "pointer" }}
+                                                            >
+                                                                <span className="small">{item.label}</span>
+                                                                <div className="form-check form-switch m-0">
+                                                                    <input
+                                                                        className="form-check-input"
+                                                                        type="checkbox"
+                                                                        checked={on}
+                                                                        onChange={() => togglePermiso(permisoId)}
+                                                                        disabled={saving}
+                                                                    />
+                                                                </div>
+                                                            </label>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
-                        <div className="mt-3 text-end">
+                        <div className="mt-3 d-flex align-items-center justify-content-between">
+                            <span className="text-muted small">
+                                <i className="bi bi-check2-circle me-1" />
+                                {totalSeleccionados} permisos activos
+                            </span>
                             <button
                                 type="button"
-                                className="btn btn-primary"
+                                className="btn btn-primary px-4"
                                 onClick={savePermisos}
                                 disabled={saving || loadingPerms}
                             >
+                                <i className="bi bi-save me-1" />
                                 Guardar permisos
                             </button>
                         </div>
@@ -322,6 +423,7 @@ const ConfiguracionPage = () => {
     const [roles, setRoles] = useState([]);
     const [apartamentos, setApartamentos] = useState([]);
     const [condominios, setCondominios] = useState([]);
+    const [entradas, setEntradas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
@@ -339,9 +441,15 @@ const ConfiguracionPage = () => {
 
     const busy = saving || deletingId != null;
 
-    const rolOptions = useMemo(
-        () => roles.map((r) => ({ ...r, nombre: rolLabel(r) })),
+    // Solo roles de personal (sin RESIDENTE) para los selects de gestión.
+    const staffRoles = useMemo(
+        () => roles.filter((r) => STAFF_ROLES.has((r.nombre || "").toUpperCase())),
         [roles],
+    );
+
+    const rolOptions = useMemo(
+        () => staffRoles.map((r) => ({ ...r, nombre: rolLabel(r) })),
+        [staffRoles],
     );
 
     const apartamentoOptions = useMemo(
@@ -354,15 +462,31 @@ const ConfiguracionPage = () => {
         [condominios],
     );
 
+    // Rol seleccionado en el formulario: si es PORTERO se piden entrada + turno.
+    const selectedRolNombre = useMemo(
+        () => roles.find((r) => String(r.id) === String(form.rolId))?.nombre || "",
+        [roles, form.rolId],
+    );
+    const esPortero = selectedRolNombre === "PORTERO";
+
+    const entradasDeCondominio = useMemo(
+        () =>
+            entradas
+                .filter((e) => String(e.condominioId) === String(form.condominioId))
+                .map((e) => ({ ...e, nombre: e.nombre })),
+        [entradas, form.condominioId],
+    );
+
     useEffect(() => {
         (async () => {
             try {
                 setPageError("");
-                const [usuariosRes, rolesRes, aptosRes, condosRes] = await Promise.allSettled([
+                const [usuariosRes, rolesRes, aptosRes, condosRes, entradasRes] = await Promise.allSettled([
                     usuarioService.getAll(),
                     rolService.getAll(),
                     apartamentoService.getAll(),
                     condominioService.getAll(),
+                    entradaService.getAll(),
                 ]);
 
                 if (usuariosRes.status === "fulfilled") {
@@ -379,6 +503,9 @@ const ConfiguracionPage = () => {
                 if (condosRes.status === "fulfilled") {
                     setCondominios(condosRes.value);
                 }
+                if (entradasRes.status === "fulfilled") {
+                    setEntradas(entradasRes.value);
+                }
             } catch (err) {
                 setPageError(getApiErrorMessage(err, "Error al cargar configuración"));
             } finally {
@@ -388,7 +515,8 @@ const ConfiguracionPage = () => {
     }, []);
 
     const filteredItems = useMemo(() => {
-        let list = items;
+        // Solo personal/staff: sin residentes ni roles no-staff.
+        let list = items.filter((u) => STAFF_ROLES.has((u.rolNombre || "").toUpperCase()));
         if (filtroRolId) {
             list = list.filter((u) => String(u.rolId) === String(filtroRolId));
         }
@@ -437,6 +565,8 @@ const ConfiguracionPage = () => {
             rolId: item.rolId || "",
             apartamentoId: item.apartamentoId || "",
             condominioId: item.condominioId || "",
+            entradaId: item.entradaId || "",
+            turno: item.turno || "",
         });
         setModalError("");
         setShowModal(true);
@@ -454,6 +584,9 @@ const ConfiguracionPage = () => {
         }
         if (!form.rolId) {
             return "Seleccione un rol.";
+        }
+        if (esPortero && (!form.condominioId || !form.entradaId || !form.turno)) {
+            return "Un portero necesita condominio, entrada (puerta) y turno.";
         }
         if (!form.password?.trim()) {
             return editMode
@@ -481,6 +614,8 @@ const ConfiguracionPage = () => {
             ...form,
             telefono: form.telefono || null,
             apartamentoId: form.apartamentoId || null,
+            entradaId: form.entradaId || null,
+            turno: form.turno || null,
             password: form.password.trim(),
         };
         try {
@@ -554,7 +689,6 @@ const ConfiguracionPage = () => {
             </td>
             <td className="px-4 py-3">{item.email}</td>
             <td className="px-4 py-3">{item.rolNombre || "—"}</td>
-            <td className="px-4 py-3">{item.tipoOcupante}</td>
             <td className="px-4 py-3">
                 <span className={`badge ${ESTADO_STYLE[item.estado] || "bg-secondary"}`}>
                     {item.estado}
@@ -622,7 +756,7 @@ const ConfiguracionPage = () => {
             )}
 
             {activeTab === "permisos" && canManagePermisos && (
-                <RolPermisosPanel roles={roles} saving={saving} setSaving={setSaving} />
+                <RolPermisosPanel roles={staffRoles} saving={saving} setSaving={setSaving} />
             )}
 
             <CrudModal
@@ -769,6 +903,37 @@ const ConfiguracionPage = () => {
                         inputClassName="form-control"
                     />
                 </FormField>
+                {esPortero && (
+                    <>
+                        <FormField label="Entrada (puerta que cubre)" required>
+                            <SearchableSelect
+                                key={`entrada-portero-${form.condominioId}`}
+                                options={entradasDeCondominio}
+                                value={form.entradaId}
+                                onChange={(id) => setForm({ ...form, entradaId: id })}
+                                disabled={saving || !form.condominioId}
+                                placeholder={
+                                    form.condominioId
+                                        ? "Selecciona la entrada que cubre"
+                                        : "Primero asigna el condominio (arriba)"
+                                }
+                                inputClassName="form-control"
+                            />
+                        </FormField>
+                        <FormField label="Turno" required>
+                            <select
+                                className="form-select"
+                                value={form.turno}
+                                onChange={(e) => setForm({ ...form, turno: e.target.value })}
+                                disabled={saving}
+                            >
+                                <option value="">Selecciona turno</option>
+                                <option value="DIA">Día</option>
+                                <option value="NOCHE">Noche</option>
+                            </select>
+                        </FormField>
+                    </>
+                )}
                 <FormField label="Estado" required>
                     <select
                         className="form-select"
