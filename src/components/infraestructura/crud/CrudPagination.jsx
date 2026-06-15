@@ -1,7 +1,9 @@
+import { getPaginationRange } from "../../../utils/pagination";
+
 const CrudPagination = ({ currentPage, totalPages, onPageChange, totalItems, pageSize }) => {
     if (totalItems <= pageSize) return null;
 
-    const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages = getPaginationRange(currentPage, totalPages, 1);
 
     return (
         <div className="card-footer bg-white border-top d-flex flex-wrap justify-content-between align-items-center gap-2 py-3 px-4">
@@ -20,17 +22,23 @@ const CrudPagination = ({ currentPage, totalPages, onPageChange, totalItems, pag
                             Anterior
                         </button>
                     </li>
-                    {pages.map((page) => (
-                        <li key={page} className={`page-item ${page === currentPage ? "active" : ""}`}>
-                            <button
-                                type="button"
-                                className="page-link"
-                                onClick={() => onPageChange(page)}
-                            >
-                                {page}
-                            </button>
-                        </li>
-                    ))}
+                    {pages.map((page, index) =>
+                        page === "…" ? (
+                            <li key={`dots-${index}`} className="page-item disabled">
+                                <span className="page-link">…</span>
+                            </li>
+                        ) : (
+                            <li key={page} className={`page-item ${page === currentPage ? "active" : ""}`}>
+                                <button
+                                    type="button"
+                                    className="page-link"
+                                    onClick={() => onPageChange(page)}
+                                >
+                                    {page}
+                                </button>
+                            </li>
+                        ),
+                    )}
                     <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
                         <button
                             type="button"
