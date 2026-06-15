@@ -13,14 +13,26 @@ const PIN_ICON = L.divIcon({
 
 const DEFAULT_CENTER = [-12.0464, -77.0428]; // Lima, Perú
 
+// Construye una dirección CORTA (calle + número, distrito, ciudad) a partir de los
+// componentes de Nominatim, en vez del display_name largo con código postal y país.
+// El profe pidió una dirección menos acertada y afinar con los clics del mapa.
+const shortAddress = (a, fallback = "") => {
+    if (!a) return fallback;
+    const calle = [a.road, a.house_number].filter(Boolean).join(" ");
+    const distrito = a.suburb || a.neighbourhood || a.quarter || a.city_district;
+    const ciudad = a.city || a.town || a.village || a.county;
+    const parts = [calle, distrito, ciudad].filter(Boolean);
+    return parts.length ? parts.join(", ") : fallback;
+};
+
 const reverseGeocode = async (lat, lng) => {
     try {
         const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+            `https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lng}`,
             { headers: { "Accept-Language": "es" } },
         );
         const data = await res.json();
-        return data?.display_name || "";
+        return shortAddress(data?.address, data?.display_name || "");
     } catch {
         return "";
     }
@@ -64,7 +76,7 @@ const MapAddressPicker = ({ onChange, disabled }) => {
         setSearching(true);
         try {
             const res = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`,
+                `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(query)}`,
                 { headers: { "Accept-Language": "es" } },
             );
             const data = await res.json();
@@ -72,7 +84,7 @@ const MapAddressPicker = ({ onChange, disabled }) => {
                 const lat = parseFloat(data[0].lat);
                 const lng = parseFloat(data[0].lon);
                 setPos([lat, lng]);
-                onChange(data[0].display_name, { lat, lng });
+                onChange(shortAddress(data[0].address, data[0].display_name), { lat, lng });
             }
         } catch {
             /* ignore */

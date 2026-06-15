@@ -28,6 +28,7 @@ const CARRITO_EMPTY = {
     descripcion: "",
     estado: "DISPONIBLE",
     condominioId: "",
+    entradaId: "",
 };
 const PRESTAMO_EMPTY = { carritoId: "", usuarioId: "", estado: "ACTIVO", entradaSalidaId: "" };
 
@@ -36,6 +37,7 @@ const CARRITO_COLUMNS = [
     { key: "codigo", label: "Código" },
     { key: "descripcion", label: "Descripción" },
     { key: "condominio", label: "Condominio" },
+    { key: "entrada", label: "Entrada" },
     { key: "estado", label: "Estado" },
     { key: "actions", label: "Acciones" },
 ];
@@ -338,6 +340,12 @@ const CarritosPage = () => {
         ) || null;
     const prestamoApto = prestamoResidente?._apto || null;
 
+    // Entradas (puertas) de un condominio (para fijar el carrito a una entrada).
+    const entradasDeCondominio = (condominioId) =>
+        entradas
+            .filter((e) => String(e.condominioId) === String(condominioId))
+            .map((e) => ({ ...e, nombre: e.nombre }));
+
     // Entradas del condominio de un carrito (para elegir por dónde sale/entra).
     const entradasDeCarrito = (carritoId) => {
         const carrito = carritosTodos.find((c) => String(c.id) === String(carritoId));
@@ -436,6 +444,7 @@ const CarritosPage = () => {
             descripcion: item.descripcion || "",
             estado: item.estado || "DISPONIBLE",
             condominioId: item.condominioId || "",
+            entradaId: item.entradaId || "",
         });
         setCarritoModalError("");
         setShowCarritoModal(true);
@@ -444,6 +453,10 @@ const CarritosPage = () => {
     const saveCarrito = async () => {
         if (!carritoForm.codigo?.trim() || !carritoForm.condominioId) {
             setCarritoModalError("Código y condominio son obligatorios.");
+            return;
+        }
+        if (!carritoEditMode && !carritoForm.entradaId) {
+            setCarritoModalError("Selecciona la entrada (puerta) a la que queda fijo el carrito.");
             return;
         }
         setSaving(true);
@@ -684,6 +697,16 @@ const CarritosPage = () => {
             <td className="fw-semibold px-4 py-3">{item.codigo}</td>
             <td className="px-4 py-3">{item.descripcion || "—"}</td>
             <td className="px-4 py-3">{item.condominioNombre || "—"}</td>
+            <td className="px-4 py-3">
+                {item.entradaNombre ? (
+                    <span className="badge bg-light text-dark">
+                        <i className="bi bi-door-open me-1" />
+                        {item.entradaNombre}
+                    </span>
+                ) : (
+                    "—"
+                )}
+            </td>
             <td className="px-4 py-3">
                 <EstadoCarritoBadge estado={item.estado} />
             </td>
@@ -945,10 +968,29 @@ const CarritosPage = () => {
                         options={condominioOptions}
                         value={carritoForm.condominioId}
                         onChange={(id) =>
-                            setCarritoForm({ ...carritoForm, condominioId: id })
+                            setCarritoForm({ ...carritoForm, condominioId: id, entradaId: "" })
                         }
-                        disabled={saving}
+                        disabled={saving || carritoEditMode}
                         placeholder="Seleccione un condominio"
+                        inputClassName="form-control"
+                    />
+                </FormField>
+                <FormField label="Entrada (puerta)" required>
+                    <SearchableSelect
+                        key={`entrada-carrito-${carritoForm.condominioId}`}
+                        options={entradasDeCondominio(carritoForm.condominioId)}
+                        value={carritoForm.entradaId}
+                        onChange={(id) =>
+                            setCarritoForm({ ...carritoForm, entradaId: id })
+                        }
+                        disabled={saving || carritoEditMode || !carritoForm.condominioId}
+                        placeholder={
+                            carritoEditMode
+                                ? "La entrada no se cambia"
+                                : !carritoForm.condominioId
+                                  ? "Primero elige el condominio"
+                                  : "¿En qué entrada queda fijo el carrito?"
+                        }
                         inputClassName="form-control"
                     />
                 </FormField>
