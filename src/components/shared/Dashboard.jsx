@@ -3,6 +3,8 @@ import { dashboardService } from "../../services/dashboardService";
 import { getApiErrorMessage } from "../../services/api";
 import { authService } from "../../services/authService";
 import { parkingService } from "../../services/parkingService";
+import { usePagination } from "../../hooks/usePagination";
+import CrudPagination from "../infraestructura/crud/CrudPagination";
 
 const Dashboard = () => {
     const [loading, setLoading] = useState(true);
@@ -21,16 +23,17 @@ const Dashboard = () => {
         (async () => {
             try {
                 setError("");
-                const stats = await dashboardService.getStats();
-                if (!cancelled) setData(stats);
-
-                // Stats de parking en su propio try/catch: si el usuario no tiene
-                // permiso de parking (403), se omite la sección sin romper el dashboard.
-                try {
-                    const pk = await parkingService.getParkingStats();
-                    if (!cancelled) setParking(pk);
-                } catch {
-                    if (!cancelled) setParking(null);
+                // Stats principales y de parking en PARALELO para reducir el tiempo de
+                // carga a la mitad (antes iban en secuencia y sumaban su latencia).
+                // El parking va en su propia promesa tolerante: si el usuario no tiene
+                // permiso (403), se omite la sección sin romper el dashboard.
+                const [stats, pk] = await Promise.all([
+                    dashboardService.getStats(),
+                    parkingService.getParkingStats().catch(() => null),
+                ]);
+                if (!cancelled) {
+                    setData(stats);
+                    setParking(pk);
                 }
             } catch (err) {
                 if (!cancelled && err?.code !== "NO_TOKEN" && err?.response?.status !== 401) {
@@ -55,6 +58,10 @@ const Dashboard = () => {
             cancelled = true;
         };
     }, []);
+
+    // Paginador del "Resumen por torres" (10 por página). Se llama antes de los
+    // early-returns para respetar las reglas de hooks; con data null usa lista vacía.
+    const torresPag = usePagination(data?.resumenTorres ?? []);
 
     if (loading) {
         return (
@@ -376,16 +383,16 @@ const Dashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="crud-table-body">
-                                    {resumenTorres.length === 0 ? (
+                                    {torresPag.totalItems === 0 ? (
                                         <tr>
                                             <td colSpan="5" className="text-center text-muted py-5">
                                                 No hay torres registradas
                                             </td>
                                         </tr>
                                     ) : (
-                                        resumenTorres.map((torre, index) => (
+                                        torresPag.paginatedItems.map((torre, index) => (
                                             <tr key={torre.id}>
-                                                <td className="px-4 py-3">{index + 1}</td>
+                                                <td className="px-4 py-3">{torresPag.rowIndex(index)}</td>
                                                 <td className="px-4 py-3 fw-semibold">{torre.nombre}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <span className="badge bg-warning text-dark">{torre.n_pisos}</span>
@@ -400,6 +407,13 @@ const Dashboard = () => {
                                 </tbody>
                             </table>
                         </div>
+                        <CrudPagination
+                            currentPage={torresPag.currentPage}
+                            totalPages={torresPag.totalPages}
+                            onPageChange={torresPag.setCurrentPage}
+                            totalItems={torresPag.totalItems}
+                            pageSize={torresPag.pageSize}
+                        />
                     </div>
                 </div>
             </section>

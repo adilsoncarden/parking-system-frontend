@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { condominioResumenService } from "../../services/condominioResumenService";
 import { getApiErrorMessage } from "../../services/api";
 import CrudPageLayout from "./crud/CrudPageLayout";
+import CrudPagination from "./crud/CrudPagination";
 import CondominioFormModal from "./CondominioFormModal";
 import { useModulePermissions } from "../../hooks/useModulePermissions";
+import { usePagination } from "../../hooks/usePagination";
 import { colorForName, initialsForName } from "../../utils/condominioVisual";
 import { imageForCondominio } from "../../utils/condominioImages";
 
@@ -108,6 +110,9 @@ const CondominiosPage = () => {
         );
     }, [items, search]);
 
+    // Paginador: las tarjetas se muestran de a 9 (cuadrícula 3×3) cuando hay más de esa cantidad.
+    const pagination = usePagination(filtered, 9);
+
     const handleSaved = async () => {
         setShowModal(false);
         condominioResumenService.invalidate();
@@ -149,13 +154,24 @@ const CondominiosPage = () => {
                         : "No hay condominios registrados"}
                 </div>
             ) : (
-                <div className="row g-3">
-                    {filtered.map((c) => (
-                        <div className="col-12 col-md-6 col-xl-4" key={c.id}>
-                            <CondominioCard condominio={c} onOpen={(id) => navigate(`/condominios/${id}`)} />
-                        </div>
-                    ))}
-                </div>
+                <>
+                    <div className="row g-3">
+                        {pagination.paginatedItems.map((c) => (
+                            <div className="col-12 col-md-6 col-xl-4" key={c.id}>
+                                <CondominioCard condominio={c} onOpen={(id) => navigate(`/condominios/${id}`)} />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="border rounded mt-3 overflow-hidden">
+                        <CrudPagination
+                            currentPage={pagination.currentPage}
+                            totalPages={pagination.totalPages}
+                            onPageChange={pagination.setCurrentPage}
+                            totalItems={pagination.totalItems}
+                            pageSize={pagination.pageSize}
+                        />
+                    </div>
+                </>
             )}
 
             <CondominioFormModal

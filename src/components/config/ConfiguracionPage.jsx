@@ -15,7 +15,7 @@ import { usePagination } from "../../hooks/usePagination";
 import { useModulePermissions } from "../../hooks/useModulePermissions";
 import { permisoService } from "../../services/permisoService";
 import { PERMISSION_GROUPS } from "../../constants/permissions";
-import { hasPermission, isAdmin } from "../../utils/permissions";
+import { hasPermission, isAdmin, getScopedCondominioId } from "../../utils/permissions";
 import { PERM } from "../../constants/permissions";
 
 const EMPTY_FORM = {
@@ -417,6 +417,9 @@ const RolPermisosPanel = ({ roles, saving, setSaving }) => {
 const ConfiguracionPage = () => {
     const { canCreate, canEdit, canDelete } = useModulePermissions("CONFIGURACION");
     const canManagePermisos = hasPermission(PERM.GESTIONAR_PERMISOS) || isAdmin();
+    // Si es admin de un condominio (no super admin), el formulario fija y bloquea su
+    // condominio para que solo gestione personal del suyo (el backend además lo valida).
+    const scopedCondoId = getScopedCondominioId();
 
     const [activeTab, setActiveTab] = useState("usuarios");
     const [items, setItems] = useState([]);
@@ -543,7 +546,11 @@ const ConfiguracionPage = () => {
     const openCreate = () => {
         setEditMode(false);
         setSelected(null);
-        setForm(EMPTY_FORM);
+        setForm(
+            scopedCondoId != null
+                ? { ...EMPTY_FORM, condominioId: scopedCondoId }
+                : EMPTY_FORM,
+        );
         setCreateFormKey((k) => k + 1);
         setModalError("");
         setShowPassword(false);
@@ -896,12 +903,17 @@ const ConfiguracionPage = () => {
                         options={condominioOptions}
                         value={form.condominioId}
                         onChange={(id) => setForm({ ...form, condominioId: id })}
-                        disabled={saving}
+                        disabled={saving || scopedCondoId != null}
                         placeholder="Asignar a un condominio..."
                         allowEmpty
                         emptyLabel="Sin condominio (no es admin de condominio)"
                         inputClassName="form-control"
                     />
+                    {scopedCondoId != null && (
+                        <small className="text-muted">
+                            Como administrador de condominio, solo puedes gestionar personal de tu condominio.
+                        </small>
+                    )}
                 </FormField>
                 {esPortero && (
                     <>
