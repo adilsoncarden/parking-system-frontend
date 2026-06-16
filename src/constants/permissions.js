@@ -16,6 +16,10 @@ export const PERM = {
     CREAR_APARTAMENTOS: "CREAR_APARTAMENTOS",
     EDITAR_APARTAMENTOS: "EDITAR_APARTAMENTOS",
     ELIMINAR_APARTAMENTOS: "ELIMINAR_APARTAMENTOS",
+    VER_ENTRADAS: "VER_ENTRADAS",
+    CREAR_ENTRADAS: "CREAR_ENTRADAS",
+    EDITAR_ENTRADAS: "EDITAR_ENTRADAS",
+    ELIMINAR_ENTRADAS: "ELIMINAR_ENTRADAS",
     VER_CARRITOS: "VER_CARRITOS",
     CREAR_CARRITOS: "CREAR_CARRITOS",
     EDITAR_CARRITOS: "EDITAR_CARRITOS",
@@ -29,6 +33,33 @@ export const PERM = {
     EDITAR_CONFIGURACION: "EDITAR_CONFIGURACION",
     ELIMINAR_CONFIGURACION: "ELIMINAR_CONFIGURACION",
     GESTIONAR_PERMISOS: "GESTIONAR_PERMISOS",
+
+    // ── Parking (ParkControl) ──
+    VER_PARKING: "VER_PARKING",
+    VER_VEHICULOS: "VER_VEHICULOS",
+    CREAR_VEHICULOS: "CREAR_VEHICULOS",
+    EDITAR_VEHICULOS: "EDITAR_VEHICULOS",
+    ELIMINAR_VEHICULOS: "ELIMINAR_VEHICULOS",
+    VER_ESTACIONAMIENTOS: "VER_ESTACIONAMIENTOS",
+    CREAR_ESTACIONAMIENTOS: "CREAR_ESTACIONAMIENTOS",
+    EDITAR_ESTACIONAMIENTOS: "EDITAR_ESTACIONAMIENTOS",
+    ELIMINAR_ESTACIONAMIENTOS: "ELIMINAR_ESTACIONAMIENTOS",
+    VER_ZONAS: "VER_ZONAS",
+    CREAR_ZONAS: "CREAR_ZONAS",
+    EDITAR_ZONAS: "EDITAR_ZONAS",
+    ELIMINAR_ZONAS: "ELIMINAR_ZONAS",
+    VER_PLAZAS: "VER_PLAZAS",
+    CREAR_PLAZAS: "CREAR_PLAZAS",
+    EDITAR_PLAZAS: "EDITAR_PLAZAS",
+    ELIMINAR_PLAZAS: "ELIMINAR_PLAZAS",
+    VER_PASES: "VER_PASES",
+    CREAR_PASES: "CREAR_PASES",
+    EDITAR_PASES: "EDITAR_PASES",
+    ELIMINAR_PASES: "ELIMINAR_PASES",
+    VER_ACCESOS: "VER_ACCESOS",
+    CREAR_ACCESOS: "CREAR_ACCESOS",
+    EDITAR_ACCESOS: "EDITAR_ACCESOS",
+    ELIMINAR_ACCESOS: "ELIMINAR_ACCESOS",
 };
 
 export const MODULE_PERMS = {
@@ -55,6 +86,12 @@ export const MODULE_PERMS = {
         create: PERM.CREAR_APARTAMENTOS,
         edit: PERM.EDITAR_APARTAMENTOS,
         delete: PERM.ELIMINAR_APARTAMENTOS,
+    },
+    ENTRADAS: {
+        view: PERM.VER_ENTRADAS,
+        create: PERM.CREAR_ENTRADAS,
+        edit: PERM.EDITAR_ENTRADAS,
+        delete: PERM.ELIMINAR_ENTRADAS,
     },
     CARRITOS: {
         view: PERM.VER_CARRITOS,
@@ -84,6 +121,12 @@ export const MENU_ITEMS = [
     { path: "/apartamentos", label: "Apartamentos", icon: "bi-house-fill", permission: PERM.VER_APARTAMENTOS },
     { path: "/carritos", label: "Carritos", icon: "bi-cart-fill", permission: PERM.VER_CARRITOS },
     { path: "/config", label: "Configuración", icon: "bi-gear-fill", permission: PERM.VER_CONFIGURACION },
+
+    // ── Parking (ParkControl) — sección debajo de Configuración ──
+    { path: "/parking/acceso", label: "Control de Acceso", icon: "bi-shield-check", permission: PERM.VER_ACCESOS, section: "Parking" },
+    { path: "/parking/residentes", label: "Directorio de Residentes", icon: "bi-people-fill", permission: PERM.VER_VEHICULOS },
+    { path: "/parking/mapa", label: "Mapa de Estacionamiento", icon: "bi-map-fill", permission: PERM.VER_ESTACIONAMIENTOS },
+    { path: "/parking/historial", label: "Historial de Acceso", icon: "bi-clock-history", permission: PERM.VER_ACCESOS },
 ];
 
 export const PERMISSION_GROUPS = [
@@ -128,6 +171,15 @@ export const PERMISSION_GROUPS = [
         ],
     },
     {
+        module: "Entradas",
+        items: [
+            { key: PERM.VER_ENTRADAS, label: "Ver" },
+            { key: PERM.CREAR_ENTRADAS, label: "Crear" },
+            { key: PERM.EDITAR_ENTRADAS, label: "Editar" },
+            { key: PERM.ELIMINAR_ENTRADAS, label: "Eliminar" },
+        ],
+    },
+    {
         module: "Carritos",
         items: [
             { key: PERM.VER_CARRITOS, label: "Ver" },
@@ -153,6 +205,65 @@ export const PERMISSION_GROUPS = [
             { key: PERM.EDITAR_CONFIGURACION, label: "Editar" },
             { key: PERM.ELIMINAR_CONFIGURACION, label: "Eliminar" },
             { key: PERM.GESTIONAR_PERMISOS, label: "Gestionar permisos" },
+        ],
+    },
+    // ── Parking (ParkControl) ──
+    {
+        module: "Parking",
+        items: [{ key: PERM.VER_PARKING, label: "Ver panel de parking" }],
+    },
+    {
+        module: "Vehículos",
+        items: [
+            { key: PERM.VER_VEHICULOS, label: "Ver" },
+            { key: PERM.CREAR_VEHICULOS, label: "Crear" },
+            { key: PERM.EDITAR_VEHICULOS, label: "Editar" },
+            { key: PERM.ELIMINAR_VEHICULOS, label: "Eliminar" },
+        ],
+    },
+    {
+        module: "Estacionamientos",
+        items: [
+            { key: PERM.VER_ESTACIONAMIENTOS, label: "Ver (mapa)" },
+            { key: PERM.CREAR_ESTACIONAMIENTOS, label: "Crear" },
+            { key: PERM.EDITAR_ESTACIONAMIENTOS, label: "Editar" },
+            { key: PERM.ELIMINAR_ESTACIONAMIENTOS, label: "Eliminar" },
+        ],
+    },
+    {
+        module: "Zonas",
+        items: [
+            { key: PERM.VER_ZONAS, label: "Ver" },
+            { key: PERM.CREAR_ZONAS, label: "Crear" },
+            { key: PERM.EDITAR_ZONAS, label: "Editar" },
+            { key: PERM.ELIMINAR_ZONAS, label: "Eliminar" },
+        ],
+    },
+    {
+        module: "Plazas",
+        items: [
+            { key: PERM.VER_PLAZAS, label: "Ver" },
+            { key: PERM.CREAR_PLAZAS, label: "Crear" },
+            { key: PERM.EDITAR_PLAZAS, label: "Editar" },
+            { key: PERM.ELIMINAR_PLAZAS, label: "Eliminar" },
+        ],
+    },
+    {
+        module: "Pases",
+        items: [
+            { key: PERM.VER_PASES, label: "Ver" },
+            { key: PERM.CREAR_PASES, label: "Crear" },
+            { key: PERM.EDITAR_PASES, label: "Editar" },
+            { key: PERM.ELIMINAR_PASES, label: "Eliminar" },
+        ],
+    },
+    {
+        module: "Accesos",
+        items: [
+            { key: PERM.VER_ACCESOS, label: "Ver" },
+            { key: PERM.CREAR_ACCESOS, label: "Registrar entrada" },
+            { key: PERM.EDITAR_ACCESOS, label: "Registrar salida" },
+            { key: PERM.ELIMINAR_ACCESOS, label: "Eliminar" },
         ],
     },
 ];

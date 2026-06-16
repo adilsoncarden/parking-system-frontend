@@ -13,7 +13,9 @@ export const authService = {
             const { token, usuario, permisos } = response.data;
 
             if (!token) {
-                return { ok: false, error: "El servidor no devolvió un token" };
+                // Login fallido: el backend responde 200 con { success:false, message }
+                // (así no hay error rojo en consola). Mostramos ese mensaje al usuario.
+                return { ok: false, error: response.data?.message || "Credenciales incorrectas" };
             }
 
             resetSessionExpiredFlag();

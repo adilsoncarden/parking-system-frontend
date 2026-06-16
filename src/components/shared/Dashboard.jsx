@@ -2,11 +2,15 @@ import { useState, useEffect } from "react";
 import { dashboardService } from "../../services/dashboardService";
 import { getApiErrorMessage } from "../../services/api";
 import { authService } from "../../services/authService";
+import { parkingService } from "../../services/parkingService";
+import { usePagination } from "../../hooks/usePagination";
+import CrudPagination from "../infraestructura/crud/CrudPagination";
 
 const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [data, setData] = useState(null);
+    const [parking, setParking] = useState(null);
 
     useEffect(() => {
         if (!authService.isAuthenticated()) {
@@ -19,8 +23,18 @@ const Dashboard = () => {
         (async () => {
             try {
                 setError("");
-                const stats = await dashboardService.getStats();
-                if (!cancelled) setData(stats);
+                // Stats principales y de parking en PARALELO para reducir el tiempo de
+                // carga a la mitad (antes iban en secuencia y sumaban su latencia).
+                // El parking va en su propia promesa tolerante: si el usuario no tiene
+                // permiso (403), se omite la sección sin romper el dashboard.
+                const [stats, pk] = await Promise.all([
+                    dashboardService.getStats(),
+                    parkingService.getParkingStats().catch(() => null),
+                ]);
+                if (!cancelled) {
+                    setData(stats);
+                    setParking(pk);
+                }
             } catch (err) {
                 if (!cancelled && err?.code !== "NO_TOKEN" && err?.response?.status !== 401) {
                     setError(getApiErrorMessage(err, "Error al cargar el dashboard"));
@@ -44,6 +58,10 @@ const Dashboard = () => {
             cancelled = true;
         };
     }, []);
+
+    // Paginador del "Resumen por torres" (10 por página). Se llama antes de los
+    // early-returns para respetar las reglas de hooks; con data null usa lista vacía.
+    const torresPag = usePagination(data?.resumenTorres ?? []);
 
     if (loading) {
         return (
@@ -127,6 +145,22 @@ const Dashboard = () => {
           ]
         : [];
 
+    const parkingCards = parking
+        ? [
+              { label: "Plazas totales", valor: parking.totalPlazas, icon: "bi-p-square-fill", color: "bg-dark" },
+              { label: "Libres", valor: parking.plazasLibres, icon: "bi-check-circle-fill", color: "bg-success" },
+              { label: "Ocupadas", valor: parking.plazasOcupadas, icon: "bi-car-front-fill", color: "bg-danger" },
+              { label: "Vehículos", valor: parking.totalVehiculos, icon: "bi-car-front", color: "bg-primary" },
+              { label: "Estancias activas", valor: parking.permanenciasActivas, icon: "bi-clock-fill", color: "bg-info" },
+              { label: "Accesos hoy", valor: parking.accesosHoy, icon: "bi-box-arrow-in-right", color: "bg-secondary" },
+          ]
+        : [];
+
+    const parkingOcupacion =
+        parking && parking.totalPlazas > 0
+            ? Math.round((parking.plazasOcupadas / parking.totalPlazas) * 100)
+            : 0;
+
     return (
         <div className="page-heading">
             <div className="page-title mb-4">
@@ -143,7 +177,7 @@ const Dashboard = () => {
                             <div className="card border-0 shadow-sm h-100">
                                 <div className="card-body d-flex align-items-center gap-3 py-4 px-4">
                                     <div
-                                        className={`${stat.color} text-white rounded-3 d-flex align-items-center justify-content-center flex-shrink-0`}
+                                        className={`${stat.color} text-white rounded-3 d-flex align-items-center justify-content-center shrink-0`}
                                         style={{ width: "3.25rem", height: "3.25rem" }}
                                     >
                                         <i className={`bi ${stat.icon} fs-4`} />
@@ -170,7 +204,7 @@ const Dashboard = () => {
                                     <div className="card border-0 shadow-sm h-100">
                                         <div className="card-body d-flex align-items-center gap-3 py-3 px-3">
                                             <div
-                                                className={`${stat.color} text-white rounded-3 d-flex align-items-center justify-content-center flex-shrink-0`}
+                                                className={`${stat.color} text-white rounded-3 d-flex align-items-center justify-content-center shrink-0`}
                                                 style={{ width: "2.75rem", height: "2.75rem" }}
                                             >
                                                 <i className={`bi ${stat.icon}`} />
@@ -187,6 +221,59 @@ const Dashboard = () => {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    </>
+                )}
+
+                {parkingCards.length > 0 && (
+                    <>
+                        <h5 className="fw-semibold mb-3">
+                            <i className="bi bi-p-circle me-2 text-primary" />
+                            Métricas de estacionamiento
+                        </h5>
+                        <div className="row g-3 mb-3">
+                            {parkingCards.map((stat) => (
+                                <div className="col-6 col-lg-4 col-xl-2" key={stat.label}>
+                                    <div className="card border-0 shadow-sm h-100">
+                                        <div className="card-body d-flex align-items-center gap-3 py-3 px-3">
+                                            <div
+                                                className={`${stat.color} text-white rounded-3 d-flex align-items-center justify-content-center shrink-0`}
+                                                style={{ width: "2.75rem", height: "2.75rem" }}
+                                            >
+                                                <i className={`bi ${stat.icon}`} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-muted small mb-1 fw-medium text-truncate">
+                                                    {stat.label}
+                                                </p>
+                                                <h5 className="mb-0 fw-bold">{stat.valor}</h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="card border-0 shadow-sm mb-4">
+                            <div className="card-body py-4 px-4">
+                                <div className="d-flex justify-content-between align-items-center mb-2">
+                                    <span className="fw-semibold">Ocupación de estacionamiento</span>
+                                    <span className="badge bg-dark fs-6">{parkingOcupacion}%</span>
+                                </div>
+                                <div className="progress rounded-pill" style={{ height: "12px" }}>
+                                    <div
+                                        className="progress-bar bg-dark rounded-pill"
+                                        style={{ width: `${parkingOcupacion}%` }}
+                                        role="progressbar"
+                                        aria-valuenow={parkingOcupacion}
+                                        aria-valuemin="0"
+                                        aria-valuemax="100"
+                                    />
+                                </div>
+                                <small className="text-muted">
+                                    {parking.plazasOcupadas} de {parking.totalPlazas} plazas ocupadas
+                                </small>
+                            </div>
                         </div>
                     </>
                 )}
@@ -296,16 +383,16 @@ const Dashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="crud-table-body">
-                                    {resumenTorres.length === 0 ? (
+                                    {torresPag.totalItems === 0 ? (
                                         <tr>
                                             <td colSpan="5" className="text-center text-muted py-5">
                                                 No hay torres registradas
                                             </td>
                                         </tr>
                                     ) : (
-                                        resumenTorres.map((torre, index) => (
+                                        torresPag.paginatedItems.map((torre, index) => (
                                             <tr key={torre.id}>
-                                                <td className="px-4 py-3">{index + 1}</td>
+                                                <td className="px-4 py-3">{torresPag.rowIndex(index)}</td>
                                                 <td className="px-4 py-3 fw-semibold">{torre.nombre}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <span className="badge bg-warning text-dark">{torre.n_pisos}</span>
@@ -320,6 +407,13 @@ const Dashboard = () => {
                                 </tbody>
                             </table>
                         </div>
+                        <CrudPagination
+                            currentPage={torresPag.currentPage}
+                            totalPages={torresPag.totalPages}
+                            onPageChange={torresPag.setCurrentPage}
+                            totalItems={torresPag.totalItems}
+                            pageSize={torresPag.pageSize}
+                        />
                     </div>
                 </div>
             </section>

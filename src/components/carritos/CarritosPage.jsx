@@ -7,6 +7,8 @@ import {
 } from "../../services/prestamoCarritoService";
 import { condominioService } from "../../services/condominioService";
 import { usuarioService } from "../../services/usuarioService";
+import { apartamentoService } from "../../services/apartamentoService";
+import { entradaService } from "../../services/entradaService";
 import { getApiErrorMessage } from "../../services/api";
 import {
     confirmDelete,
@@ -26,14 +28,16 @@ const CARRITO_EMPTY = {
     descripcion: "",
     estado: "DISPONIBLE",
     condominioId: "",
+    entradaId: "",
 };
-const PRESTAMO_EMPTY = { carritoId: "", usuarioId: "", estado: "ACTIVO" };
+const PRESTAMO_EMPTY = { carritoId: "", usuarioId: "", estado: "ACTIVO", entradaSalidaId: "" };
 
 const CARRITO_COLUMNS = [
     { key: "idx", label: "#" },
     { key: "codigo", label: "Código" },
     { key: "descripcion", label: "Descripción" },
     { key: "condominio", label: "Condominio" },
+    { key: "entrada", label: "Entrada" },
     { key: "estado", label: "Estado" },
     { key: "actions", label: "Acciones" },
 ];
@@ -47,6 +51,8 @@ const PRESTAMO_COLUMNS = [
     { key: "estadoPen", label: "Estado penal." },
     { key: "prestamo", label: "Fecha préstamo" },
     { key: "devolucion", label: "Devolución" },
+    { key: "entradaSalida", label: "Salió por" },
+    { key: "entradaDevolucion", label: "Devuelto por" },
     { key: "estado", label: "Estado" },
     { key: "actions", label: "Acciones" },
 ];
@@ -66,9 +72,6 @@ const ESTADO_PRESTAMO_STYLE = {
 
 const carritoLabel = (c) =>
     `${c.codigo}${c.descripcion ? ` — ${c.descripcion}` : ""} — ${c.condominioNombre || "—"} — ${c.estado}`;
-
-const usuarioLabel = (u) =>
-    `${u.nombres} ${u.apellidos}${u.email ? ` — ${u.email}` : ""}`;
 
 const SearchableSelect = ({
     options,
@@ -228,7 +231,10 @@ const CarritosPage = () => {
     const [carritosTodos, setCarritosTodos] = useState([]);
     const [prestamosTodos, setPrestamosTodos] = useState([]);
     const [condominios, setCondominios] = useState([]);
-    const [usuarios, setUsuarios] = useState([]);
+    const [entradas, setEntradas] = useState([]);
+    // Propietarios elegibles para prestar, cargados por condominio bajo demanda.
+    const [residentesCache, setResidentesCache] = useState({});
+    const [loadingResidentes, setLoadingResidentes] = useState(false);
 
     const [searchCarritos, setSearchCarritos] = useState("");
     const [searchPrestamos, setSearchPrestamos] = useState("");
@@ -245,6 +251,10 @@ const CarritosPage = () => {
     const [prestamoForm, setPrestamoForm] = useState(PRESTAMO_EMPTY);
     const [prestamoModalError, setPrestamoModalError] = useState("");
     const [prestamoFormKey, setPrestamoFormKey] = useState(0);
+
+    const [showDevolucionModal, setShowDevolucionModal] = useState(false);
+    const [devolucionTarget, setDevolucionTarget] = useState(null);
+    const [devolucionEntradaId, setDevolucionEntradaId] = useState("");
 
     const busy = saving || deletingId != null;
 
@@ -266,22 +276,83 @@ const CarritosPage = () => {
         [carritosTodos],
     );
 
-    const usuarioOptions = useMemo(
-        () => usuarios.map((u) => ({ ...u, nombre: usuarioLabel(u) })),
-        [usuarios],
-    );
-
     const loadAll = async () => {
-        const [condos, users, carritosData, prestamosData] = await Promise.all([
+        const [condos, carritosData, prestamosData, entradasData] = await Promise.all([
             condominioService.getAll(),
-            usuarioService.getAll(),
             carritoService.getAll(),
             prestamoCarritoService.getAll(),
+            entradaService.getAll(),
         ]);
         setCondominios(condos);
-        setUsuarios(users);
         setCarritosTodos(carritosData);
         setPrestamosTodos(prestamosData);
+        setEntradas(entradasData);
+    };
+
+    const carritoDe = (carritoId) =>
+        carritosTodos.find((c) => String(c.id) === String(carritoId));
+
+    // Carga perezosa: solo los propietarios del condominio del carrito (no los 3000+).
+    const ensureResidentes = async (condominioId) => {
+        if (!condominioId || residentesCache[condominioId]) return;
+        setLoadingResidentes(true);
+        try {
+            const [users, aptos] = await Promise.all([
+                usuarioService.getAll(null, null, condominioId),
+                apartamentoService.getAll(null, condominioId),
+            ]);
+            const aptoById = new Map(aptos.map((a) => [a.id, a]));
+            const opts = users
+                .filter((u) => u.apartamentoId != null && aptoById.has(u.apartamentoId))
+                .map((u) => {
+                    const a = aptoById.get(u.apartamentoId);
+                    return {
+                        ...u,
+                        _apto: a,
+                        nombre: `${a.torreNombre || "—"} · Piso ${a.pisoNumero ?? "—"} · Depto ${a.numero} — ${u.nombres} ${u.apellidos}`,
+                    };
+                });
+            setResidentesCache((prev) => ({ ...prev, [condominioId]: opts }));
+        } catch {
+            setResidentesCache((prev) => ({ ...prev, [condominioId]: [] }));
+        } finally {
+            setLoadingResidentes(false);
+        }
+    };
+
+    const residentesDeCarrito = (carritoId) => {
+        const cond = carritoDe(carritoId)?.condominioId;
+        return cond != null ? residentesCache[cond] || [] : [];
+    };
+
+    // Al abrir el modal o cambiar de carrito, carga los propietarios de ese condominio.
+    useEffect(() => {
+        if (!showPrestamoModal) return;
+        const cond = carritoDe(prestamoForm.carritoId)?.condominioId;
+        if (cond != null) ensureResidentes(cond);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showPrestamoModal, prestamoForm.carritoId]);
+
+    // Propietario actualmente seleccionado (para el resumen).
+    const prestamoResidente =
+        residentesDeCarrito(prestamoForm.carritoId).find(
+            (r) => String(r.id) === String(prestamoForm.usuarioId),
+        ) || null;
+    const prestamoApto = prestamoResidente?._apto || null;
+
+    // Entradas (puertas) de un condominio (para fijar el carrito a una entrada).
+    const entradasDeCondominio = (condominioId) =>
+        entradas
+            .filter((e) => String(e.condominioId) === String(condominioId))
+            .map((e) => ({ ...e, nombre: e.nombre }));
+
+    // Entradas del condominio de un carrito (para elegir por dónde sale/entra).
+    const entradasDeCarrito = (carritoId) => {
+        const carrito = carritosTodos.find((c) => String(c.id) === String(carritoId));
+        if (!carrito) return [];
+        return entradas
+            .filter((e) => String(e.condominioId) === String(carrito.condominioId))
+            .map((e) => ({ ...e, nombre: e.nombre }));
     };
 
     useEffect(() => {
@@ -373,6 +444,7 @@ const CarritosPage = () => {
             descripcion: item.descripcion || "",
             estado: item.estado || "DISPONIBLE",
             condominioId: item.condominioId || "",
+            entradaId: item.entradaId || "",
         });
         setCarritoModalError("");
         setShowCarritoModal(true);
@@ -381,6 +453,10 @@ const CarritosPage = () => {
     const saveCarrito = async () => {
         if (!carritoForm.codigo?.trim() || !carritoForm.condominioId) {
             setCarritoModalError("Código y condominio son obligatorios.");
+            return;
+        }
+        if (!carritoEditMode && !carritoForm.entradaId) {
+            setCarritoModalError("Selecciona la entrada (puerta) a la que queda fijo el carrito.");
             return;
         }
         setSaving(true);
@@ -460,6 +536,7 @@ const CarritosPage = () => {
             const created = await prestamoCarritoService.create({
                 carritoId: prestamoForm.carritoId,
                 usuarioId: prestamoForm.usuarioId,
+                entradaSalidaId: prestamoForm.entradaSalidaId,
             });
             setPrestamosTodos((prev) => [...prev, created]);
             setCarritoEstadoLocal(prestamoForm.carritoId, "PRESTADO");
@@ -477,21 +554,26 @@ const CarritosPage = () => {
         }
     };
 
-    const devolverPrestamo = async (prestamo) => {
-        const ok = await confirmAction({
-            title: "¿Registrar devolución?",
-            text: `Carrito ${prestamo.codigoCarrito} — ${prestamo.usuarioNombre}`,
-            confirmText: "Sí, devolver",
-            icon: "question",
-        });
-        if (!ok) return;
+    const openDevolucion = (prestamo) => {
+        setDevolucionTarget(prestamo);
+        setDevolucionEntradaId("");
+        setShowDevolucionModal(true);
+    };
+
+    const confirmarDevolucion = async () => {
+        const prestamo = devolucionTarget;
+        if (!prestamo) return;
         setSaving(true);
         try {
-            const updated = await prestamoCarritoService.devolver(prestamo.id);
+            const updated = await prestamoCarritoService.devolver(
+                prestamo.id,
+                devolucionEntradaId,
+            );
             setPrestamosTodos((prev) =>
                 prev.map((p) => (p.id === updated.id ? updated : p)),
             );
             setCarritoEstadoLocal(prestamo.carritoId, "DISPONIBLE");
+            setShowDevolucionModal(false);
             if (updated.penalizado && !updated.pagado) {
                 await showSuccess(
                     `Devolución registrada. Penalización: ${formatMoney(updated.montoPenalizacion)} (${updated.tiempoExcedidoMinutos} min excedidos).`,
@@ -616,6 +698,16 @@ const CarritosPage = () => {
             <td className="px-4 py-3">{item.descripcion || "—"}</td>
             <td className="px-4 py-3">{item.condominioNombre || "—"}</td>
             <td className="px-4 py-3">
+                {item.entradaNombre ? (
+                    <span className="badge bg-light text-dark">
+                        <i className="bi bi-door-open me-1" />
+                        {item.entradaNombre}
+                    </span>
+                ) : (
+                    "—"
+                )}
+            </td>
+            <td className="px-4 py-3">
                 <EstadoCarritoBadge estado={item.estado} />
             </td>
             <td className="text-nowrap px-4 py-3">
@@ -700,6 +792,26 @@ const CarritosPage = () => {
                     {formatDateTime(item.fechaDevolucion)}
                 </td>
                 <td className="px-4 py-3">
+                    {item.entradaSalidaNombre ? (
+                        <span className="badge bg-light text-dark">
+                            <i className="bi bi-box-arrow-right me-1" />
+                            {item.entradaSalidaNombre}
+                        </span>
+                    ) : (
+                        "—"
+                    )}
+                </td>
+                <td className="px-4 py-3">
+                    {item.entradaDevolucionNombre ? (
+                        <span className="badge bg-light text-dark">
+                            <i className="bi bi-box-arrow-in-left me-1" />
+                            {item.entradaDevolucionNombre}
+                        </span>
+                    ) : (
+                        "—"
+                    )}
+                </td>
+                <td className="px-4 py-3">
                     <EstadoPrestamoBadge estado={item.estado} />
                 </td>
                 <td className="text-nowrap px-4 py-3">
@@ -707,7 +819,7 @@ const CarritosPage = () => {
                     <button
                         type="button"
                         className="btn btn-sm btn-outline-success me-1"
-                        onClick={() => devolverPrestamo(item)}
+                        onClick={() => openDevolucion(item)}
                         disabled={busy}
                     >
                             <i className="bi bi-arrow-return-left me-1" />
@@ -856,10 +968,29 @@ const CarritosPage = () => {
                         options={condominioOptions}
                         value={carritoForm.condominioId}
                         onChange={(id) =>
-                            setCarritoForm({ ...carritoForm, condominioId: id })
+                            setCarritoForm({ ...carritoForm, condominioId: id, entradaId: "" })
                         }
-                        disabled={saving}
+                        disabled={saving || carritoEditMode}
                         placeholder="Seleccione un condominio"
+                        inputClassName="form-control"
+                    />
+                </FormField>
+                <FormField label="Entrada (puerta)" required>
+                    <SearchableSelect
+                        key={`entrada-carrito-${carritoForm.condominioId}`}
+                        options={entradasDeCondominio(carritoForm.condominioId)}
+                        value={carritoForm.entradaId}
+                        onChange={(id) =>
+                            setCarritoForm({ ...carritoForm, entradaId: id })
+                        }
+                        disabled={saving || carritoEditMode || !carritoForm.condominioId}
+                        placeholder={
+                            carritoEditMode
+                                ? "La entrada no se cambia"
+                                : !carritoForm.condominioId
+                                  ? "Primero elige el condominio"
+                                  : "¿En qué entrada queda fijo el carrito?"
+                        }
                         inputClassName="form-control"
                     />
                 </FormField>
@@ -905,19 +1036,88 @@ const CarritosPage = () => {
                         inputClassName="form-control"
                     />
                 </FormField>
-                <FormField label="Usuario" required>
+                <FormField label="Departamento / Propietario" required>
                     <SearchableSelect
-                        key={`usuario-prestamo-${prestamoFormKey}`}
-                        options={usuarioOptions}
+                        key={`residente-prestamo-${prestamoFormKey}-${prestamoForm.carritoId}`}
+                        options={residentesDeCarrito(prestamoForm.carritoId)}
                         value={prestamoForm.usuarioId}
                         onChange={(id) =>
                             setPrestamoForm({ ...prestamoForm, usuarioId: id })
                         }
-                        disabled={saving}
-                        placeholder="Buscar usuario..."
+                        disabled={saving || !prestamoForm.carritoId || loadingResidentes}
+                        placeholder={
+                            !prestamoForm.carritoId
+                                ? "Primero elige el carrito"
+                                : loadingResidentes
+                                  ? "Cargando propietarios..."
+                                  : "Busca por torre, depto o nombre del dueño..."
+                        }
                         inputClassName="form-control"
                     />
                 </FormField>
+                {prestamoResidente && prestamoApto && (
+                    <div className="alert alert-light border d-flex align-items-center gap-2 py-2 small mb-3">
+                        <i className="bi bi-person-badge-fill text-primary fs-5" />
+                        <div>
+                            <strong>{prestamoResidente.nombres} {prestamoResidente.apellidos}</strong>
+                            <div className="text-muted">
+                                <i className="bi bi-geo-alt me-1" />
+                                {prestamoApto.torreNombre} · Piso {prestamoApto.pisoNumero} · Depto {prestamoApto.numero}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                <FormField label="Entrada de salida">
+                    <SearchableSelect
+                        key={`entrada-salida-${prestamoFormKey}-${prestamoForm.carritoId}`}
+                        options={entradasDeCarrito(prestamoForm.carritoId)}
+                        value={prestamoForm.entradaSalidaId}
+                        onChange={(id) =>
+                            setPrestamoForm({ ...prestamoForm, entradaSalidaId: id })
+                        }
+                        disabled={saving || !prestamoForm.carritoId}
+                        placeholder={
+                            prestamoForm.carritoId
+                                ? "¿Por qué entrada sale? (opcional)"
+                                : "Primero elige el carrito"
+                        }
+                        allowEmpty
+                        emptyLabel="Sin especificar"
+                        inputClassName="form-control"
+                    />
+                </FormField>
+            </CrudModal>
+
+            <CrudModal
+                show={showDevolucionModal}
+                title="Registrar Devolución"
+                error=""
+                saving={saving}
+                onClose={() => !busy && setShowDevolucionModal(false)}
+                onSave={confirmarDevolucion}
+                saveLabel="Confirmar devolución"
+            >
+                {devolucionTarget && (
+                    <>
+                        <p className="mb-3">
+                            Carrito <strong>{devolucionTarget.codigoCarrito}</strong> —{" "}
+                            {devolucionTarget.usuarioNombre}
+                        </p>
+                        <FormField label="Entrada de devolución">
+                            <SearchableSelect
+                                key={`entrada-dev-${devolucionTarget.id}`}
+                                options={entradasDeCarrito(devolucionTarget.carritoId)}
+                                value={devolucionEntradaId}
+                                onChange={setDevolucionEntradaId}
+                                disabled={saving}
+                                placeholder="¿Por qué entrada se devuelve? (opcional)"
+                                allowEmpty
+                                emptyLabel="Sin especificar"
+                                inputClassName="form-control"
+                            />
+                        </FormField>
+                    </>
+                )}
             </CrudModal>
         </CrudPageLayout>
     );
