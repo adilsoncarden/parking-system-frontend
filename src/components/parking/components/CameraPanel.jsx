@@ -61,12 +61,16 @@ export default function CameraPanel({ onDetected }) {
   useEffect(() => teardown, []);
 
   // Engancha el stream cuando el <video> YA está montado (active=true).
-  // Solo asignamos srcObject: el <video> tiene autoPlay, así el navegador reproduce
-  // por su cuenta. No llamamos play() manualmente → no hay promesa que pueda quedar
-  // colgada y lanzar el "AbortError: play() interrupted by pause()" al desmontar.
+  // Llamamos play() nosotros y le ENGANCHAMOS un .catch: si teardown/stopCamera
+  // interrumpe la reproducción (pause o srcObject=null) antes de que la promesa
+  // resuelva, el AbortError "play() interrupted by pause()" se traga aquí en vez de
+  // quedar como "Uncaught (in promise)" en la consola.
   useEffect(() => {
     if (active && streamRef.current && videoRef.current) {
-      videoRef.current.srcObject = streamRef.current;
+      const v = videoRef.current;
+      v.srcObject = streamRef.current;
+      const p = v.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
     }
   }, [active]);
 
@@ -125,7 +129,7 @@ export default function CameraPanel({ onDetected }) {
       <div className="relative rounded-xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center">
         {/* Video en vivo */}
         {active && (
-          <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+          <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
         )}
 
         {/* Guía de encuadre */}
