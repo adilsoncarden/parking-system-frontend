@@ -1,61 +1,73 @@
-# 🚗 Sistema de Gestión de Condominios CondoSaaS
+# 🚗 CondoSaaS — Frontend
 
-## 📌 Descripción del Proyecto
-
-Plataforma web desarrollada para la administración moderna de condominios residenciales, enfocada en el control vehicular, gestión de estacionamientos y administración de activos comunes.
-
-El sistema trabaja bajo arquitectura **SaaS (Software as a Service)**, permitiendo gestionar múltiples condominios desde una sola plataforma, manteniendo independencia de datos y configuración por cada cliente.
+Interfaz web del sistema de gestión de condominios **CondoSaaS + ParkControl**, desarrollada en React + Vite.
 
 ---
 
-# 🎯 Objetivo General
+## 🧰 Tecnologías
 
-Optimizar los procesos administrativos, operativos y de seguridad dentro de condominios mediante una solución digital escalable, segura y eficiente.
-
----
-
-# 🚨 Problemática Actual
-
-Muchos condominios manejan sus operaciones de forma manual o con herramientas dispersas, generando:
-
-- Falta de control vehicular
-- Ingresos no autorizados
-- Demoras en portería
-- Pérdida de registros
-- Mal uso de activos comunes
-- Cobros no controlados de multas
-- Baja trazabilidad administrativa
+- React 18
+- Vite
+- Axios
+- Bootstrap 5
+- React Router DOM
 
 ---
 
-# ✅ Solución Propuesta
+## ⚙️ Variables de entorno
 
-Implementación de un sistema modular compuesto por:
+Crea un archivo `.env` en la raíz del proyecto basándote en `.env.example`:
 
-## 🔹 Módulo Administrativo
-
-- Gestión de condominios
-- Torres, pisos y apartamentos
-- Usuarios y roles
-- Configuración de multas
-- Gestión de carritos de carga
-- Reportes generales
-
-## 🔹 Módulo Parqueo y Portería
-
-- Registro de ingreso y salida vehicular
-- Escaneo OCR de placas
-- Validación automática de acceso
-- Registro manual de contingencia
-- Historial vehicular
-
----
-
-# 🧱 Arquitectura del Sistema
-
-Modelo Multi-Tenant SaaS:
-
-```text
-1 Plataforma = N Condominios
-Cada condominio = Datos independientes
+```bash
+cp .env.example .env
 ```
+
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `VITE_API_URL` | URL base del backend | `http://localhost:8080` |
+
+---
+
+## 🚀 Correr el proyecto localmente
+
+```bash
+# 1. Instalar dependencias
+npm install
+
+# 2. Configurar variables de entorno
+cp .env.example .env
+
+# 3. Levantar servidor de desarrollo
+npm run dev
+```
+
+La app estará disponible en `http://localhost:5173`
+
+---
+
+## 🔗 Conexión con el backend
+
+El frontend consume la API REST del backend CondoSaaS. Asegúrate de tener el backend corriendo antes de levantar el frontend, o apunta `VITE_API_URL` al servidor desplegado en Render:
+VITE_API_URL=https://parking-system-backend-0chy.onrender.com
+
+---
+
+## 📁 Estructura del proyecto
+
+src/
+├── components/        # Componentes por módulo
+│   ├── infraestructura/   # Condominios, torres, pisos, apartamentos
+│   ├── parking/           # Módulo ParkControl (mapa, entradas, historial)
+│   ├── carritos/          # Gestión de carritos de carga
+│   └── shared/            # Dashboard, Sidebar, Login
+├── context/           # Estado global (AppContext)
+├── hooks/             # Hooks reutilizables
+├── services/          # Clientes HTTP hacia la API
+├── utils/             # Helpers (JWT, permisos, paginación)
+└── styles/            # CSS global y por módulo
+
+---
+
+## 🌐 Demo
+
+Frontend desplegado: https://parking-system-frontend-il10.onrender.com
