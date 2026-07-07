@@ -8,6 +8,8 @@ import CrudPageLayout from "./crud/CrudPageLayout";
 import CrudPagination from "./crud/CrudPagination";
 import CondominioFormModal from "./CondominioFormModal";
 import EntradaFormModal from "./EntradaFormModal";
+import TorreFormModal from "./TorreFormModal";
+import CarritoFormModal from "./CarritoFormModal";
 import { useModulePermissions } from "../../hooks/useModulePermissions";
 import { usePagination } from "../../hooks/usePagination";
 import { initialsForName } from "../../utils/condominioVisual";
