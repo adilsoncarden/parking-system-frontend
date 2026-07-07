@@ -354,7 +354,18 @@ const CondominioDetailPage = () => {
             <div className="row g-3">
                 {/* Torres */}
                 <div className="col-12 col-xl-6">
-                    <SectionCard title="Torres" icon="bi-building" count={torres.length}>
+                    <SectionCard 
+                        title="Torres" 
+                        icon="bi-building" 
+                        count={torres.length}
+                        action={
+                            torrePerms.canCreate && (
+                                <button className="btn btn-sm btn-primary" onClick={() => setShowTorreModal(true)}>
+                                    <i className="bi bi-plus-lg me-1" /> Agregar Torre
+                                </button>
+                            )
+                        }
+                    >
                         <div className="table-responsive">
                             <table className="table table-hover align-middle cond-table">
                                 <thead>
