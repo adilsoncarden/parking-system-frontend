@@ -158,3 +158,12 @@ html[data-bs-theme="dark"] .bg-white {
 html[data-bs-theme="dark"] .bg-white.bg-opacity-75 {
     background-color: rgba(30, 33, 57, 0.9) !important;
 }
+
+html[data-bs-theme="dark"] .cond-statcard-value,
+html[data-bs-theme="dark"] .cond-stat-value {
+    color: #e9ecef;
+}
+
+html[data-bs-theme="dark"] .cond-statcard-hint {
+    color: #adb5bd;
+}
