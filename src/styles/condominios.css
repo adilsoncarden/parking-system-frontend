@@ -133,6 +133,15 @@
     color: #fff;
 }
 
+.cond-detail-header h1,
+.cond-detail-header h2,
+.cond-detail-header h3,
+.cond-detail-header h4,
+.cond-detail-header h5,
+.cond-detail-header h6 {
+    color: #fff !important;
+}
+
 .cond-detail-header .text-muted,
 .cond-detail-header small {
     color: rgba(255, 255, 255, 0.85) !important;
