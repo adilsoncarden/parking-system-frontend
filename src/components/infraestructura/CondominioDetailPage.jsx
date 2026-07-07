@@ -402,7 +402,18 @@ const CondominioDetailPage = () => {
 
                 {/* Carritos */}
                 <div className="col-12 col-xl-6">
-                    <SectionCard title="Carritos" icon="bi-cart3" count={carritos.length}>
+                    <SectionCard 
+                        title="Carritos" 
+                        icon="bi-cart3" 
+                        count={carritos.length}
+                        action={
+                            carritoPerms.canCreate && (
+                                <button className="btn btn-sm btn-primary" onClick={() => setShowCarritoModal(true)}>
+                                    <i className="bi bi-plus-lg me-1" /> Agregar Carrito
+                                </button>
+                            )
+                        }
+                    >
                         <div className="table-responsive">
                             <table className="table table-hover align-middle cond-table">
                                 <thead>
