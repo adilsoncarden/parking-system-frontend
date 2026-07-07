@@ -11,11 +11,12 @@ const BASE = "/api/carritos";
  * @param {number} datos.condominioId
  * @returns {object}
  */
-const toBackend = ({ codigo, descripcion, estado, condominioId }) => ({
+const toBackend = ({ codigo, descripcion, estado, condominioId, entradaId }) => ({
     codigo: codigo?.trim(),
     descripcion: descripcion?.trim() || null,
     estado: estado || "DISPONIBLE",
     condominioId: Number(condominioId),
+    entradaId: entradaId ? Number(entradaId) : null,
 });
 
 /**
