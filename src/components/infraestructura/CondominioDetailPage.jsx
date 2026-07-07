@@ -128,6 +128,18 @@ const CondominioDetailPage = () => {
         await reloadEntradas();
     };
 
+    const handleTorreSaved = async () => {
+        setShowTorreModal(false);
+        condominioResumenService.invalidate();
+        await load(true);
+    };
+
+    const handleCarritoSaved = async () => {
+        setShowCarritoModal(false);
+        condominioResumenService.invalidate();
+        await load(true);
+    };
+
     const handleDeleteEntrada = async (entrada) => {
         const ok = await confirmAction({
             title: "¿Eliminar esta entrada?",
