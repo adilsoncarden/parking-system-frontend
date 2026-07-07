@@ -500,13 +500,18 @@ const CondominioDetailPage = () => {
                 onSaved={handleSaved}
             />
 
-            <EntradaFormModal
-                show={showEntradaModal}
-                editMode={!!entradaEdit}
-                target={entradaEdit}
-                condominioId={condominio.id}
-                onClose={() => setShowEntradaModal(false)}
-                onSaved={handleEntradaSaved}
+            <TorreFormModal
+                show={showTorreModal}
+                fixedCondominioId={condominio.id}
+                onClose={() => setShowTorreModal(false)}
+                onSaved={handleTorreSaved}
+            />
+
+            <CarritoFormModal
+                show={showCarritoModal}
+                fixedCondominioId={condominio.id}
+                onClose={() => setShowCarritoModal(false)}
+                onSaved={handleCarritoSaved}
             />
         </CrudPageLayout>
     );
