@@ -76,6 +76,8 @@ const CondominioDetailPage = () => {
     const navigate = useNavigate();
     const { canEdit } = useModulePermissions("CONDOMINIOS");
     const entradaPerms = useModulePermissions("ENTRADAS");
+    const torrePerms = useModulePermissions("TORRES");
+    const carritoPerms = useModulePermissions("CARRITOS");
 
     const [data, setData] = useState(null);
     const [entradas, setEntradas] = useState([]);
@@ -83,6 +85,8 @@ const CondominioDetailPage = () => {
     const [pageError, setPageError] = useState("");
     const [showEdit, setShowEdit] = useState(false);
     const [showEntradaModal, setShowEntradaModal] = useState(false);
+    const [showTorreModal, setShowTorreModal] = useState(false);
+    const [showCarritoModal, setShowCarritoModal] = useState(false);
     const [entradaEdit, setEntradaEdit] = useState(null);
     const [entradaBusy, setEntradaBusy] = useState(false);
 
