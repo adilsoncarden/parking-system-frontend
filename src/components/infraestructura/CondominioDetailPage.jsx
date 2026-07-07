@@ -44,14 +44,17 @@ const StatCard = ({ icon, label, value, color, hint }) => (
     </div>
 );
 
-const SectionCard = ({ title, icon, count, children }) => (
+const SectionCard = ({ title, icon, count, action, children }) => (
     <div className="card cond-section shadow-sm">
         <div className="card-header d-flex align-items-center justify-content-between bg-transparent">
-            <h5 className="mb-0">
-                <i className={`bi ${icon} me-2 text-primary`} />
-                {title}
-            </h5>
-            {count != null && <span className="badge bg-light text-dark rounded-pill">{count}</span>}
+            <div className="d-flex align-items-center gap-2">
+                <h5 className="mb-0">
+                    <i className={`bi ${icon} me-2 text-primary`} />
+                    {title}
+                </h5>
+                {count != null && <span className="badge bg-light text-dark rounded-pill">{count}</span>}
+            </div>
+            {action}
         </div>
         <div className="card-body p-0">{children}</div>
     </div>
