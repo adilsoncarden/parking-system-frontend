@@ -1,0 +1,22 @@
+name: Deploy a Render (frontend)
+
+# Auto-despliegue: en cada push a main dispara el Deploy Hook del Static Site en
+# Render, para que el frontend se reconstruya solo (el auto-deploy nativo esta
+# apagado). Tambien se puede lanzar a mano desde la pestana Actions.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar deploy en Render
+        env:
+          RENDER_DEPLOY_HOOK: "https://api.render.com/deploy/srv-d8okikn7f7vs73esb70g?key=A-bGY1nyxsc"
+        run: |
+          echo "Disparando deploy del frontend en Render..."
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+          echo ""
+          echo "Deploy solicitado. Render reconstruira en unos minutos."
