@@ -8,6 +8,7 @@ import { getApiErrorMessage } from "../../services/api";
 import { confirmDelete, showSuccess, showError } from "../../utils/swalHelpers";
 import CrudPageLayout from "../infraestructura/crud/CrudPageLayout";
 import CrudTableCard from "../infraestructura/crud/CrudTableCard";
+import MultasPanel from "./MultasPanel";
 import CrudModal from "../infraestructura/crud/CrudModal";
 import FormField from "../infraestructura/crud/FormField";
 import RowActions from "../infraestructura/crud/RowActions";
@@ -38,7 +39,27 @@ const MAX_TELEFONO = 9;
 // La gestión de Usuarios es solo para el PERSONAL (staff) del sistema.
 // Los residentes (3000+) son datos de parking y se ven en el Directorio de Residentes,
 // no acá. Así la lista queda limpia con solo las cuentas de acceso.
-const STAFF_ROLES = new Set(["ADMIN", "ADMIN_CONDOMINIO", "SUBADMIN", "PORTERO"]);
+// Acepta los nombres nuevos del spec V6 (AGENTE_SEGURIDAD) y los previos (PORTERO)
+// para no romper durante la transición del renombrado de roles.
+const STAFF_ROLES = new Set([
+    "ADMIN",
+    "ADMIN_CONDOMINIO",
+    "SUBADMIN",
+    "PORTERO",
+    "AGENTE_SEGURIDAD",
+]);
+
+// Etiquetas legibles de rol (spec V6). Un PORTERO/AGENTE_SEGURIDAD se muestra igual.
+const ROL_LABELS = {
+    ADMIN: "Super Admin",
+    ADMIN_CONDOMINIO: "Admin de condominio",
+    SUBADMIN: "Subadmin",
+    PORTERO: "Agente de seguridad",
+    AGENTE_SEGURIDAD: "Agente de seguridad",
+    RESIDENTE: "Propietario",
+    PROPIETARIO: "Propietario",
+};
+const rolLabelText = (nombre) => ROL_LABELS[(nombre || "").toUpperCase()] || nombre || "—";
 
 // Íconos por módulo para el panel de "Permisos por rol".
 const MODULE_ICONS = {
@@ -81,7 +102,7 @@ const apartamentoLabel = (a) =>
     `Apto ${a.numero} — Piso ${a.pisoNumero ?? "—"} — ${a.torreNombre || "—"}`;
 
 const rolLabel = (r) =>
-    r.descripcion ? `${r.nombre} — ${r.descripcion}` : r.nombre;
+    r.descripcion ? `${rolLabelText(r.nombre)} — ${r.descripcion}` : rolLabelText(r.nombre);
 
 const SearchableSelect = ({
     options,
@@ -470,7 +491,8 @@ const ConfiguracionPage = () => {
         () => roles.find((r) => String(r.id) === String(form.rolId))?.nombre || "",
         [roles, form.rolId],
     );
-    const esPortero = selectedRolNombre === "PORTERO";
+    const esPortero =
+        selectedRolNombre === "PORTERO" || selectedRolNombre === "AGENTE_SEGURIDAD";
 
     const entradasDeCondominio = useMemo(
         () =>
@@ -695,7 +717,7 @@ const ConfiguracionPage = () => {
                 {item.nombres} {item.apellidos}
             </td>
             <td className="px-4 py-3">{item.email}</td>
-            <td className="px-4 py-3">{item.rolNombre || "—"}</td>
+            <td className="px-4 py-3">{rolLabelText(item.rolNombre)}</td>
             <td className="px-4 py-3">
                 <span className={`badge ${ESTADO_STYLE[item.estado] || "bg-secondary"}`}>
                     {item.estado}
@@ -740,6 +762,15 @@ const ConfiguracionPage = () => {
                         </button>
                     </li>
                 )}
+                <li className="nav-item">
+                    <button
+                        type="button"
+                        className={`nav-link ${activeTab === "multas" ? "active" : ""}`}
+                        onClick={() => setActiveTab("multas")}
+                    >
+                        Multas
+                    </button>
+                </li>
             </ul>
 
             {activeTab === "usuarios" && (
@@ -765,6 +796,8 @@ const ConfiguracionPage = () => {
             {activeTab === "permisos" && canManagePermisos && (
                 <RolPermisosPanel roles={staffRoles} saving={saving} setSaving={setSaving} />
             )}
+
+            {activeTab === "multas" && <MultasPanel condominios={condominios} />}
 
             <CrudModal
                 show={showModal}

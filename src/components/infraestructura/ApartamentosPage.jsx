@@ -13,12 +13,13 @@ import RowActions from "./crud/RowActions";
 import { usePagination } from "../../hooks/usePagination";
 import { useModulePermissions } from "../../hooks/useModulePermissions";
 
-const EMPTY_FORM = { numero: "", area: "", pisoId: "", estado: "DISPONIBLE" };
+const EMPTY_FORM = { numero: "", area: "", pisoId: "", estado: "DISPONIBLE", derechoEstacionamiento: false };
 
 const COLUMNS = [
     { key: "idx", label: "#" },
     { key: "numero", label: "Apartamento" },
     { key: "area", label: "Área (m²)" },
+    { key: "derechoEstacionamiento", label: "Derecho parking" },
     { key: "piso", label: "Piso" },
     { key: "torre", label: "Torre" },
     { key: "condominio", label: "Condominio" },
@@ -295,6 +296,7 @@ const ApartamentosPage = () => {
             area: item.area ?? "",
             pisoId: item.pisoId || "",
             estado: item.estado || "DISPONIBLE",
+            derechoEstacionamiento: !!item.derechoEstacionamiento,
         });
         setModalError("");
         setShowModal(true);
@@ -326,6 +328,7 @@ const ApartamentosPage = () => {
             pisoId: form.pisoId,
             area: form.area,
             estado: form.estado,
+            derechoEstacionamiento: !!form.derechoEstacionamiento,
         };
         try {
             if (editMode) {
@@ -437,6 +440,13 @@ const ApartamentosPage = () => {
             <td className="px-4 py-3">{pagination.rowIndex(index)}</td>
             <td className="fw-semibold px-4 py-3">{item.numero}</td>
             <td className="px-4 py-3">{item.area != null ? item.area : "—"}</td>
+            <td className="px-4 py-3">
+                {item.derechoEstacionamiento ? (
+                    <span className="badge bg-success">Sí</span>
+                ) : (
+                    <span className="badge bg-secondary">No</span>
+                )}
+            </td>
             <td className="px-4 py-3">Piso {getPisoNumero(item)}</td>
             <td className="px-4 py-3">{getTorreNombre(item)}</td>
             <td className="px-4 py-3">{getCondominioNombre(item)}</td>
@@ -519,6 +529,23 @@ const ApartamentosPage = () => {
                         onChange={(e) => setForm({ ...form, area: e.target.value })}
                         disabled={saving}
                     />
+                </FormField>
+                <FormField label="Derecho a estacionamiento">
+                    <div className="form-check">
+                        <input
+                            type="checkbox"
+                            className="form-check-input"
+                            id="derechoEstacionamiento"
+                            checked={!!form.derechoEstacionamiento}
+                            onChange={(e) =>
+                                setForm({ ...form, derechoEstacionamiento: e.target.checked })
+                            }
+                            disabled={saving}
+                        />
+                        <label className="form-check-label ms-2" htmlFor="derechoEstacionamiento">
+                            La unidad tiene derecho a una plaza de estacionamiento
+                        </label>
+                    </div>
                 </FormField>
                 <FormField label="Estado" required>
                     <select
