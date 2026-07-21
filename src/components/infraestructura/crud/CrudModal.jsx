@@ -9,11 +9,12 @@ const CrudModal = ({
     size,
     saveLabel,
     children,
+    zIndex,
 }) => {
     if (!show) return null;
 
     return (
-        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: zIndex || 1055 }}>
             <div className={`modal-dialog modal-dialog-centered${size ? ` modal-${size}` : ""}`}>
                 <div className="modal-content border-0 shadow">
                     <div className="modal-header border-bottom-0 pb-0">

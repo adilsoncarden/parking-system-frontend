@@ -102,6 +102,8 @@ export const condominioResumenService = {
         cache = null;
     },
 
+    getRaw: async (force = false) => getRaw(force),
+
     // Listado de condominios, cada uno con sus totales (para las tarjetas).
     getResumen: async ({ force = false } = {}) => {
         const raw = await getRaw(force);

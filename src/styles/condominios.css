@@ -284,3 +284,13 @@
 .leaflet-container {
     font: inherit;
 }
+
+/* Fix SweetAlert Z-Index over Modals */
+.swal2-container {
+    z-index: 2000 !important;
+}
+
+
+.leaflet-container {
+    font: inherit;
+}

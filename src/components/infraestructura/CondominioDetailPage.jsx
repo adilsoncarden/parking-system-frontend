@@ -9,6 +9,7 @@ import CrudPagination from "./crud/CrudPagination";
 import CondominioFormModal from "./CondominioFormModal";
 import EntradaFormModal from "./EntradaFormModal";
 import TorreFormModal from "./TorreFormModal";
+import TorreDetailModal from "./TorreDetailModal";
 import CarritoFormModal from "./CarritoFormModal";
 import { useModulePermissions } from "../../hooks/useModulePermissions";
 import { usePagination } from "../../hooks/usePagination";
@@ -86,6 +87,8 @@ const CondominioDetailPage = () => {
     const [showEdit, setShowEdit] = useState(false);
     const [showEntradaModal, setShowEntradaModal] = useState(false);
     const [showTorreModal, setShowTorreModal] = useState(false);
+    const [showTorreDetail, setShowTorreDetail] = useState(false);
+    const [selectedTorre, setSelectedTorre] = useState(null);
     const [showCarritoModal, setShowCarritoModal] = useState(false);
     const [entradaEdit, setEntradaEdit] = useState(null);
     const [entradaBusy, setEntradaBusy] = useState(false);
@@ -371,8 +374,8 @@ const CondominioDetailPage = () => {
                                 <thead>
                                     <tr>
                                         <th className="ps-4">Torre</th>
-                                        <th>Pisos</th>
-                                        <th className="pe-4">Apartamentos</th>
+                                        <th className="text-center">Pisos</th>
+                                        <th className="pe-4 text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -382,8 +385,18 @@ const CondominioDetailPage = () => {
                                         torresPag.paginatedItems.map((t) => (
                                             <tr key={t.id}>
                                                 <td className="ps-4 fw-semibold">{t.nombre}</td>
-                                                <td>{t.nPisos}</td>
-                                                <td className="pe-4">{t.nApartamentos}</td>
+                                                <td className="text-center">{t.nPisos}</td>
+                                                <td className="pe-4 text-end">
+                                                    <button 
+                                                        className="btn btn-sm btn-primary"
+                                                        onClick={() => {
+                                                            setSelectedTorre(t);
+                                                            setShowTorreDetail(true);
+                                                        }}
+                                                    >
+                                                        <i className="bi bi-eye me-1" /> Ver Torre
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))
                                     )}
@@ -500,12 +513,37 @@ const CondominioDetailPage = () => {
                 onSaved={handleSaved}
             />
 
+            <EntradaFormModal
+                show={showEntradaModal}
+                editMode={!!entradaEdit}
+                target={entradaEdit}
+                condominioId={condominio.id}
+                onClose={() => setShowEntradaModal(false)}
+                onSaved={handleEntradaSaved}
+            />
+
             <TorreFormModal
                 show={showTorreModal}
                 fixedCondominioId={condominio.id}
                 onClose={() => setShowTorreModal(false)}
                 onSaved={handleTorreSaved}
             />
+
+            {selectedTorre && (
+                <TorreDetailModal
+                    show={showTorreDetail}
+                    torre={selectedTorre}
+                    condominioId={condominio.id}
+                    onClose={() => {
+                        setShowTorreDetail(false);
+                        setSelectedTorre(null);
+                    }}
+                    onUpdated={() => {
+                        condominioResumenService.invalidate();
+                        load(true);
+                    }}
+                />
+            )}
 
             <CarritoFormModal
                 show={showCarritoModal}
